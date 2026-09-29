@@ -598,32 +598,49 @@ function renderKeywords() {
   
   if (kwCurrentTab === 'keywords') {
     container.innerHTML = `
-      <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
         <div class="tab-btn active" onclick="switchKwTab('keywords')">🏷️ 关键词</div>
         <div class="tab-btn" onclick="switchKwTab('exclude')">🚫 排除词</div>
       </div>
+      <div class="kn-section">
+        <div class="kn-title">
+          <span>📂 赛道分类</span>
+          <span class="kn-count">${domains.length} 个赛道</span>
+        </div>
+        <div class="kn-list">
+          ${domains.map(d => `<span class="kn-tag custom">${escapeHtml(d)}<span class="remove-btn" onclick="doRemoveDomain('${escapeHtml(d)}')">×</span></span>`).join('')}
+        </div>
+        <div class="kn-add">
+          <input type="text" id="add-domain" placeholder="添加新赛道（如：留学规划）...">
+          <button onclick="doAddDomain()">添加赛道</button>
+        </div>
+      </div>
+      <div style="height:1px;background:#252336;margin:16px 0;"></div>
       ${domains.map(domain => {
         const kws = allKws[domain] || [];
         return `
           <div class="kn-section">
             <div class="kn-title">
-              <span>${domain}</span>
-              <span class="kn-count">${kws.length} 个</span>
+              <span class="domain-name" ondblclick="doRenameDomain('${escapeHtml(domain)}')" title="双击重命名">${escapeHtml(domain)}</span>
+              <span class="kn-count">${kws.length} 个关键词</span>
             </div>
             <div class="kn-list">
-              ${kws.map(k => `<span class="kn-tag custom">${escapeHtml(k)}<span class="remove-btn" onclick="doRemoveKeyword('${domain}', '${escapeHtml(k)}')">×</span></span>`).join('')}
+              ${kws.map(k => `<span class="kn-tag custom">${escapeHtml(k)}<span class="remove-btn" onclick="doRemoveKeyword('${escapeHtml(domain)}', '${escapeHtml(k)}')">×</span></span>`).join('')}
             </div>
             <div class="kn-add">
               <input type="text" id="add-kw-${domain}" placeholder="添加关键词...">
-              <button onclick="doAddKeyword('${domain}')">添加</button>
+              <button onclick="doAddKeyword('${escapeHtml(domain)}')">添加</button>
             </div>
           </div>
         `;
       }).join('')}
+      <div style="font-size:11px;color:#888;margin-top:12px;padding:0 4px;">
+        💡 双击赛道名可以重命名。赛道用于分类热搜，关键词越精准匹配越准确。
+      </div>
     `;
   } else {
     container.innerHTML = `
-      <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
         <div class="tab-btn" onclick="switchKwTab('keywords')">🏷️ 关键词</div>
         <div class="tab-btn active" onclick="switchKwTab('exclude')">🚫 排除词</div>
       </div>
@@ -688,6 +705,80 @@ function doRemoveExclude(keyword) {
   showToast('已删除');
   renderKeywords();
   renderHotList();
+}
+
+// ============ 赛道管理 ============
+function doAddDomain() {
+  const input = document.getElementById('add-domain');
+  const domain = input.value.trim();
+  if (!domain) return;
+  const kw = getAllKeywords();
+  if (kw[domain]) {
+    showToast('赛道已存在');
+    return;
+  }
+  kw[domain] = [];
+  saveAllKeywords(kw);
+  input.value = '';
+  showToast('赛道已添加');
+  renderKeywords();
+  updateDomainTabs();
+}
+
+function doRemoveDomain(domain) {
+  if (!confirm(`确定删除赛道"${domain}"？\n该赛道下的所有关键词都会被删除。`)) return;
+  const kw = getAllKeywords();
+  delete kw[domain];
+  saveAllKeywords(kw);
+  showToast('赛道已删除');
+  renderKeywords();
+  updateDomainTabs();
+  // 如果当前选中的是被删除的赛道，切回全部
+  if (currentDomain === domain) {
+    currentDomain = 'all';
+    document.querySelectorAll('#domain-tabs .tab-chip').forEach(c => c.classList.toggle('active', c.dataset.domain === 'all'));
+  }
+  renderHotList();
+}
+
+function doRenameDomain(domain) {
+  const newName = prompt(`将"${domain}"重命名为：`, domain);
+  if (!newName || newName === domain) return;
+  const kw = getAllKeywords();
+  if (kw[newName]) {
+    showToast('赛道名已存在');
+    return;
+  }
+  kw[newName] = kw[domain];
+  delete kw[domain];
+  saveAllKeywords(kw);
+  showToast('已重命名');
+  renderKeywords();
+  updateDomainTabs();
+  if (currentDomain === domain) currentDomain = newName;
+  renderHotList();
+}
+
+// 更新顶部赛道Tab
+function updateDomainTabs() {
+  const allKws = getAllKeywords();
+  const domains = Object.keys(allKws);
+  const tabsContainer = document.getElementById('domain-tabs');
+  if (!tabsContainer) return;
+  tabsContainer.innerHTML = `
+    <div class="tab-chip ${currentDomain === 'all' ? 'active' : ''}" data-domain="all">全部</div>
+    ${domains.map(d => `<div class="tab-chip ${currentDomain === d ? 'active' : ''}" data-domain="${escapeHtml(d)}">${escapeHtml(d)}</div>`).join('')}
+  `;
+  // 重新绑定点击事件
+  tabsContainer.querySelectorAll('.tab-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      tabsContainer.querySelectorAll('.tab-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      currentDomain = chip.dataset.domain;
+      currentTimestamp = null;
+      renderHotList();
+    });
+  });
 }
 
 // ============ 页面切换 ============
