@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#6C5CE7">
+<title>🔥 热搜追踪 · 灵感盒子</title>
+<script src="data.js"></script>
+<script src="keywords.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  background: #0F0E17;
+  color: #F5F5F7;
+  min-height: 100vh;
+  font-size: 14px;
+  padding-bottom: 80px;
+}
+
+/* Header */
+.header {
+  background: linear-gradient(135deg, #6C5CE7 0%, #A29BFE 100%);
+  padding: 20px 16px 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header h1 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.header .subtitle { font-size: 12px; opacity: 0.85; margin-bottom: 12px; }
+.header .time { font-size: 11px; opacity: 0.75; }
+
+/* Tab Bar */
+.tab-bar {
+  display: flex;
+  background: #1A1925;
+  border-bottom: 1px solid #252336;
+  position: sticky;
+  top: 76px;
+  z-index: 99;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.tab-bar::-webkit-scrollbar { display: none; }
+.tab-chip {
+  flex: 0 0 auto;
+  padding: 10px 16px;
+  font-size: 13px;
+  color: #888;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+.tab-chip.active { color: #A29BFE; border-bottom-color: #6C5CE7; font-weight: 600; }
+
+/* Platform Filter */
+.platform-filter {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.platform-filter::-webkit-scrollbar { display: none; }
+.platform-chip {
+  flex: 0 0 auto;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  background: #252336;
+  color: #ccc;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+.platform-chip.active { background: rgba(108, 92, 231, 0.2); color: #A29BFE; border-color: #6C5CE7; }
+
+/* Hot List */
+.hot-list { padding: 0 16px; }
+.hot-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid #1A1925;
+  text-decoration: none;
+  color: inherit;
+}
+.hot-item:active { background: #1A1925; margin: 0 -16px; padding-left: 16px; padding-right: 16px; }
+.hot-rank {
+  flex: 0 0 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: #252336;
+  color: #888;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hot-rank.top1 { background: #FF4757; color: white; }
+.hot-rank.top2 { background: #FF7F50; color: white; }
+.hot-rank.top3 { background: #FFA502; color: white; }
+.hot-content { flex: 1; min-width: 0; }
+.hot-title {
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 6px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.hot-meta { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #888; }
+.hot-platform { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 500; }
+.hot-domains { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+.hot-domain-tag { padding: 1px 6px; border-radius: 4px; font-size: 10px; background: rgba(108, 92, 231, 0.15); color: #A29BFE; }
+
+/* Bottom Nav */
+.bottom-nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: #1A1925;
+  border-top: 1px solid #252336;
+  display: flex;
+  z-index: 100;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0;
+  gap: 2px;
+  font-size: 10px;
+  color: #888;
+  cursor: pointer;
+}
+.nav-item.active { color: #A29BFE; }
+.nav-icon { font-size: 20px; }
+
+/* Keywords Page */
+.keywords-page { padding: 16px; }
+.kn-section {
+  background: #1A1925;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.kn-title {
+  padding: 14px 16px;
+  font-weight: 600;
+  font-size: 14px;
+  border-bottom: 1px solid #252336;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.kn-count { font-size: 12px; color: #888; font-weight: 400; }
+.kn-list {
+  padding: 12px 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.kn-tag {
+  padding: 5px 10px;
+  border-radius: 16px;
+  font-size: 12px;
+  background: #252336;
+  color: #ccc;
+}
+.kn-tag.custom {
+  background: rgba(108, 92, 231, 0.2);
+  color: #A29BFE;
+  position: relative;
+  padding-right: 22px;
+}
+.kn-tag .remove-btn {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  color: #888;
+  cursor: pointer;
+}
+.kn-add {
+  padding: 12px 16px;
+  border-top: 1px solid #252336;
+  display: flex;
+  gap: 8px;
+}
+.kn-add input {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #252336;
+  background: #0F0E17;
+  color: #F5F5F7;
+  font-size: 13px;
+}
+.kn-add button {
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: #6C5CE7;
+  color: white;
+  border: none;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* History Page */
+.history-page { padding: 16px; }
+.history-item {
+  background: #1A1925;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+.history-item:active { background: #252336; }
+.history-time { font-size: 14px; font-weight: 500; }
+.history-count { font-size: 12px; color: #888; margin-top: 4px; }
+
+/* Loading */
+.loading { text-align: center; padding: 60px 20px; color: #888; font-size: 13px; }
+.empty { text-align: center; padding: 60px 20px; color: #666; font-size: 13px; }
+.empty .icon { font-size: 40px; margin-bottom: 12px; }
+
+/* Refresh btn */
+.refresh-btn {
+  position: fixed;
+  right: 16px;
+  bottom: 80px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #6C5CE7;
+  color: white;
+  border: none;
+  font-size: 20px;
+  box-shadow: 0 4px 16px rgba(108, 92, 231, 0.4);
+  z-index: 90;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.refresh-btn:active { transform: scale(0.95); }
+.refresh-btn.spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Toast */
+.toast {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.8);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  z-index: 999;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; }
+
+/* Page hide */
+.page { display: none; }
+.page.active { display: block; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <h1>🔥 热搜追踪</h1>
+  <div class="subtitle">教育 · 认知 · 家庭 · 升学 · 艺术 · 美学</div>
+  <div class="time" id="update-time">加载中...</div>
+</div>
+
+<!-- Tab Bar -->
+<div class="tab-bar" id="domain-tabs">
+  <div class="tab-chip active" data-domain="all">全部相关</div>
+  <div class="tab-chip" data-domain="教育">教育</div>
+  <div class="tab-chip" data-domain="认知">认知</div>
+  <div class="tab-chip" data-domain="家庭">家庭</div>
+  <div class="tab-chip" data-domain="升学">升学</div>
+  <div class="tab-chip" data-domain="艺术">艺术</div>
+  <div class="tab-chip" data-domain="美学">美学</div>
+</div>
+
+<!-- Platform Filter -->
+<div class="platform-filter" id="platform-filter">
+  <div class="platform-chip active" data-platform="all">全部平台</div>
+</div>
+
+<!-- Hot Search Page -->
+<div class="page active" id="page-hotsearch">
+  <div class="hot-list" id="hot-list">
+    <div class="loading">加载中...</div>
+  </div>
+</div>
+
+<!-- Keywords Page -->
+<div class="page" id="page-keywords">
+  <div class="keywords-page" id="keywords-content"></div>
+</div>
+
+<!-- History Page -->
+<div class="page" id="page-history">
+  <div class="history-page" id="history-list"></div>
+</div>
+
+<!-- Refresh Button -->
+<button class="refresh-btn" id="refresh-btn" onclick="manualRefresh()">🔄</button>
+
+<!-- Bottom Nav -->
+<div class="bottom-nav">
+  <div class="nav-item active" data-page="hotsearch">
+    <div class="nav-icon">🔥</div><div>热搜</div>
+  </div>
+  <div class="nav-item" data-page="history">
+    <div class="nav-icon">📅</div><div>历史</div>
+  </div>
+  <div class="nav-item" data-page="keywords">
+    <div class="nav-icon">🏷️</div><div>关键词</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============ 配置 ============
+const PLATFORMS = [
+  { key: 'weibo', name: '微博', color: '#E6162D' },
+  { key: 'douyin', name: '抖音', color: '#000000' },
+  { key: 'zhihu', name: '知乎', color: '#0066FF' },
+  { key: 'baidu', name: '百度', color: '#2932E1' },
+  { key: 'bilibili', name: 'B站', color: '#FB7299' }
+];
+
+const STORAGE_KEY = 'hotsearch_custom_keywords';
+
+let currentDomain = 'all';
+let currentPlatform = 'all';
+let currentTimestamp = null;
+
+// ============ 工具函数 ============
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// 本地存储自定义关键词
+function getCustomKeywords() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+  } catch(e) { return {}; }
+}
+function saveCustomKeywords(kw) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(kw));
+}
+function addKeyword(domain, keyword) {
+  const kw = getCustomKeywords();
+  if (!kw[domain]) kw[domain] = [];
+  if (!kw[domain].includes(keyword)) kw[domain].push(keyword);
+  saveCustomKeywords(kw);
+  return kw;
+}
+function removeKeyword(domain, keyword) {
+  const kw = getCustomKeywords();
+  if (kw[domain]) {
+    kw[domain] = kw[domain].filter(k => k !== keyword);
+    saveCustomKeywords(kw);
+  }
+  return kw;
+}
+
+// 分类话题
+function classifyTopic(title) {
+  const domains = [];
+  const custom = getCustomKeywords();
+  const allKws = { ...window.DEFAULT_KEYWORDS };
+  for (const [d, kws] of Object.entries(custom)) {
+    if (allKws[d]) allKws[d] = [...new Set([...allKws[d], ...kws])];
+    else allKws[d] = kws;
+  }
+  for (const [domain, keywords] of Object.entries(allKws)) {
+    if (keywords.some(kw => title.includes(kw))) {
+      domains.push(domain);
+    }
+  }
+  return domains;
+}
+
+// ============ 平台筛选渲染 ============
+function renderPlatformFilter() {
+  const container = document.getElementById('platform-filter');
+  container.innerHTML = '<div class="platform-chip active" data-platform="all">全部平台</div>' +
+    PLATFORMS.map(p => `<div class="platform-chip" data-platform="${p.name}">${p.name}</div>`).join('');
+  container.querySelectorAll('.platform-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      container.querySelectorAll('.platform-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      currentPlatform = chip.dataset.platform;
+      renderHotList();
+    });
+  });
+}
+
+// ============ 热搜列表渲染 ============
+function getCurrentRecord() {
+  const data = window.HOTSEARCH_DATA || [];
+  if (!data || data.length === 0) return null;
+  if (currentTimestamp) {
+    return data.find(r => r.timestamp === currentTimestamp) || data[0];
+  }
+  return data[0];
+}
+
+function renderHotList() {
+  const list = document.getElementById('hot-list');
+  const record = getCurrentRecord();
+  
+  if (!record || !record.items || record.items.length === 0) {
+    list.innerHTML = '<div class="empty"><div class="icon">📭</div><br>暂无数据</div>';
+    document.getElementById('update-time').textContent = '暂无数据';
+    return;
+  }
+  
+  document.getElementById('update-time').textContent = '更新于 ' + record.dateStr;
+  
+  // 确保每条有domains标记
+  let items = record.items.map(item => {
+    if (!item.domains || item.domains.length === 0) {
+      return { ...item, domains: classifyTopic(item.title) };
+    }
+    return item;
+  });
+  
+  // 按赛道筛选
+  if (currentDomain !== 'all') {
+    items = items.filter(item => item.domains.includes(currentDomain));
+  } else {
+    // 全部相关：只显示至少属于一个赛道的
+    items = items.filter(item => item.domains.length > 0);
+  }
+  
+  // 按平台筛选
+  if (currentPlatform !== 'all') {
+    items = items.filter(item => item.platform === currentPlatform);
+  }
+  
+  if (items.length === 0) {
+    list.innerHTML = '<div class="empty"><div class="icon">🔍</div><br>没有匹配的热搜<br><span style="font-size:11px;">试试切换赛道或平台</span></div>';
+    return;
+  }
+  
+  list.innerHTML = items.map((item, i) => {
+    const rankClass = i < 3 ? `top${i+1}` : '';
+    const domainTags = item.domains.length > 0
+      ? `<div class="hot-domains">${item.domains.map(d => `<span class="hot-domain-tag">${d}</span>`).join('')}</div>`
+      : '';
+    return `
+      <a href="${item.url}" target="_blank" class="hot-item">
+        <div class="hot-rank ${rankClass}">${i+1}</div>
+        <div class="hot-content">
+          <div class="hot-title">${escapeHtml(item.title)}</div>
+          <div class="hot-meta">
+            <span class="hot-platform" style="background:${item.color || '#666'}22;color:${item.color || '#ccc'}">${item.platform}</span>
+            <span>${item.hot || ''}</span>
+          </div>
+          ${domainTags}
+        </div>
+      </a>
+    `;
+  }).join('');
+}
+
+// ============ 手动刷新 ============
+function manualRefresh() {
+  const btn = document.getElementById('refresh-btn');
+  btn.classList.add('spin');
+  btn.disabled = true;
+  showToast('正在刷新，请稍候...');
+  
+  // 纯静态版本只能重新加载页面获取最新数据
+  setTimeout(() => {
+    location.reload();
+  }, 1000);
+}
+
+// ============ 历史记录 ============
+function renderHistory() {
+  const list = document.getElementById('history-list');
+  const data = window.HOTSEARCH_DATA || [];
+  
+  if (!data || data.length === 0) {
+    list.innerHTML = '<div class="empty"><div class="icon">📅</div><br>暂无历史记录</div>';
+    return;
+  }
+  
+  list.innerHTML = data.map(item => `
+    <div class="history-item" onclick="viewHistory(${item.timestamp})">
+      <div>
+        <div class="history-time">${escapeHtml(item.dateStr)}</div>
+        <div class="history-count">${item.items ? item.items.length : 0} 条热搜</div>
+      </div>
+      <div style="color:#888;">›</div>
+    </div>
+  `).join('');
+}
+
+function viewHistory(timestamp) {
+  currentTimestamp = timestamp;
+  switchPage('hotsearch');
+}
+
+// ============ 关键词管理 ============
+function renderKeywords() {
+  const container = document.getElementById('keywords-content');
+  const custom = getCustomKeywords();
+  const domains = ['教育', '认知', '家庭', '升学', '艺术', '美学'];
+  
+  container.innerHTML = domains.map(domain => {
+    const defaults = window.DEFAULT_KEYWORDS[domain] || [];
+    const customs = custom[domain] || [];
+    return `
+      <div class="kn-section">
+        <div class="kn-title">
+          <span>${domain}</span>
+          <span class="kn-count">默认${defaults.length} + 自定义${customs.length}</span>
+        </div>
+        <div class="kn-list">
+          ${defaults.map(k => `<span class="kn-tag">${escapeHtml(k)}</span>`).join('')}
+          ${customs.map(k => `<span class="kn-tag custom">${escapeHtml(k)}<span class="remove-btn" onclick="doRemoveKeyword('${domain}', '${escapeHtml(k)}')">×</span></span>`).join('')}
+        </div>
+        <div class="kn-add">
+          <input type="text" id="add-kw-${domain}" placeholder="添加自定义关键词...">
+          <button onclick="doAddKeyword('${domain}')">添加</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function doAddKeyword(domain) {
+  const input = document.getElementById(`add-kw-${domain}`);
+  const keyword = input.value.trim();
+  if (!keyword) return;
+  addKeyword(domain, keyword);
+  showToast('已添加');
+  renderKeywords();
+  renderHotList(); // 重新分类
+}
+
+function doRemoveKeyword(domain, keyword) {
+  if (!confirm(`删除关键词"${keyword}"？`)) return;
+  removeKeyword(domain, keyword);
+  showToast('已删除');
+  renderKeywords();
+  renderHotList();
+}
+
+// ============ 页面切换 ============
+function switchPage(page) {
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.page === page);
+  });
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(`page-${page}`).classList.add('active');
+  
+  if (page === 'hotsearch') renderHotList();
+  if (page === 'history') renderHistory();
+  if (page === 'keywords') renderKeywords();
+}
+
+// 底部导航
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => switchPage(item.dataset.page));
+});
+
+// 赛道Tab点击
+document.querySelectorAll('#domain-tabs .tab-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('#domain-tabs .tab-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    currentDomain = chip.dataset.domain;
+    currentTimestamp = null;
+    renderHotList();
+  });
+});
+
+// ============ 初始化 ============
+renderPlatformFilter();
+renderHotList();
+</script>
+</body>
+</html>
