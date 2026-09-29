@@ -77,6 +77,47 @@ body {
 }
 .platform-chip.active { background: rgba(108, 92, 231, 0.2); color: #A29BFE; border-color: #6C5CE7; }
 
+/* Filter Bar */
+.filter-bar {
+  padding: 8px 16px 12px;
+  background: #0F0E17;
+  border-bottom: 1px solid #1A1925;
+}
+.filter-group {
+  margin-bottom: 8px;
+}
+.filter-group:last-child {
+  margin-bottom: 0;
+}
+.filter-label {
+  font-size: 11px;
+  color: #888;
+  margin-right: 8px;
+  display: inline-block;
+  width: 28px;
+}
+.filter-chips {
+  display: inline-flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  vertical-align: middle;
+}
+.filter-chip {
+  padding: 4px 10px;
+  font-size: 12px;
+  border-radius: 20px;
+  background: #1A1925;
+  color: #888;
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.filter-chip.active {
+  background: rgba(108, 92, 231, 0.2);
+  color: #A29BFE;
+  border-color: #6C5CE7;
+}
+
 /* Hot List */
 .hot-list { padding: 0 16px; }
 .hot-item {
@@ -305,6 +346,28 @@ body {
   <div class="platform-chip active" data-platform="all">全部平台</div>
 </div>
 
+<!-- Sort & Date Filter -->
+<div class="filter-bar">
+  <div class="filter-group">
+    <span class="filter-label">排序</span>
+    <div class="filter-chips" id="sort-filter">
+      <div class="filter-chip active" data-sort="relevance">关联度</div>
+      <div class="filter-chip" data-sort="hot">热度</div>
+      <div class="filter-chip" data-sort="time">最新</div>
+    </div>
+  </div>
+  <div class="filter-group">
+    <span class="filter-label">时间</span>
+    <div class="filter-chips" id="date-filter">
+      <div class="filter-chip active" data-date="all">全部</div>
+      <div class="filter-chip" data-date="today">今天</div>
+      <div class="filter-chip" data-date="yesterday">昨天</div>
+      <div class="filter-chip" data-date="3d">近3天</div>
+      <div class="filter-chip" data-date="7d">近7天</div>
+    </div>
+  </div>
+</div>
+
 <!-- Hot Search Page -->
 <div class="page active" id="page-hotsearch">
   <div class="hot-list" id="hot-list">
@@ -357,6 +420,8 @@ const KW_STORAGE_KEY = 'hotsearch_keywords_v2';
 let currentDomain = 'all';
 let currentPlatform = 'all';
 let currentTimestamp = null;
+let currentSort = 'relevance'; // relevance / hot / time
+let currentDateRange = 'all'; // all / today / yesterday / 3d / 7d
 let serverItems = []; // 从服务端加载的数据
 
 // ============ 工具函数 ============
@@ -471,17 +536,64 @@ function renderPlatformFilter() {
   });
 }
 
+// ============ 排序和日期筛选 ============
+function initSortAndDateFilter() {
+  // 排序
+  document.querySelectorAll('#sort-filter .filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('#sort-filter .filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      currentSort = chip.dataset.sort;
+      renderHotList();
+    });
+  });
+  // 日期
+  document.querySelectorAll('#date-filter .filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('#date-filter .filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      currentDateRange = chip.dataset.date;
+      renderHotList();
+    });
+  });
+}
+
 // ============ 热搜列表渲染 ============
+function parseHot(hotStr) {
+  if (!hotStr) return 0;
+  const s = hotStr.toString();
+  if (s.includes('万')) return parseFloat(s) * 10000;
+  if (s.includes('亿')) return parseFloat(s) * 100000000;
+  return parseInt(s.replace(/,/g, '')) || 0;
+}
+
+function getDateRangeStart() {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  switch(currentDateRange) {
+    case 'today': return today;
+    case 'yesterday': return today - 86400000;
+    case '3d': return today - 2 * 86400000; // 近3天（含今天）
+    case '7d': return today - 6 * 86400000;
+    default: return 0;
+  }
+}
+
+function getDateRangeEnd() {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  if (currentDateRange === 'yesterday') return today; // 昨天结束=今天开始
+  return Date.now();
+}
+
 function getCurrentItems() {
   const items = serverItems.length > 0 ? serverItems : [];
   
-  // 用本地关键词重新计算关联度（因为用户可能改了关键词）
+  // 用本地关键词重新计算关联度
   const allKws = getAllKeywords();
   const excludes = getExcludeKeywords();
   
-  const processed = items.map(item => {
-    if (item.relevance !== undefined && !item._needRecompute) return item;
-    
+  let processed = items.map(item => {
     const domains = [];
     const matched = [];
     const excluded = excludes.some(kw => item.title.includes(kw));
@@ -500,15 +612,33 @@ function getCurrentItems() {
   });
   
   // 过滤排除的
-  const filtered = processed.filter(item => !item.excluded);
+  processed = processed.filter(item => !item.excluded);
   
-  // 按关联度排序
-  filtered.sort((a, b) => {
-    if ((b.relevance || 0) !== (a.relevance || 0)) return (b.relevance || 0) - (a.relevance || 0);
-    return (b.lastSeen || 0) - (a.lastSeen || 0);
+  // 按日期范围筛选
+  const startTs = getDateRangeStart();
+  const endTs = getDateRangeEnd();
+  if (startTs > 0) {
+    processed = processed.filter(item => {
+      const ts = item.lastSeen || item.firstSeen || 0;
+      return ts >= startTs && ts <= endTs;
+    });
+  }
+  
+  // 排序
+  processed.sort((a, b) => {
+    switch(currentSort) {
+      case 'hot':
+        return parseHot(b.hot) - parseHot(a.hot);
+      case 'time':
+        return (b.lastSeen || 0) - (a.lastSeen || 0);
+      case 'relevance':
+      default:
+        if ((b.relevance || 0) !== (a.relevance || 0)) return (b.relevance || 0) - (a.relevance || 0);
+        return parseHot(b.hot) - parseHot(a.hot);
+    }
   });
   
-  return { items: filtered, dateStr: serverItems.length > 0 ? new Date().toLocaleString('zh-CN') : '' };
+  return { items: processed, dateStr: serverItems.length > 0 ? new Date().toLocaleString('zh-CN') : '' };
 }
 
 // 从服务端加载数据
@@ -884,6 +1014,7 @@ document.head.appendChild(extraStyle);
 
 // ============ 初始化 ============
 renderPlatformFilter();
+initSortAndDateFilter();
 // 先显示本地数据，再异步加载服务端
 renderHotList();
 loadFromServer().then(ok => {
