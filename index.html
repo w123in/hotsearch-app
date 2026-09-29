@@ -340,6 +340,7 @@ body {
 
 <div class="toast" id="toast"></div>
 
+<script src="fetcher.js"></script>
 <script>
 // ============ 配置 ============
 const PLATFORMS = [
@@ -350,11 +351,13 @@ const PLATFORMS = [
   { key: 'bilibili', name: 'B站', color: '#FB7299' }
 ];
 
+const API_BASE = 'https://hotsearch-api.1158486079.workers.dev';
 const KW_STORAGE_KEY = 'hotsearch_keywords_v2';
 
 let currentDomain = 'all';
 let currentPlatform = 'all';
 let currentTimestamp = null;
+let serverItems = []; // 从服务端加载的数据
 
 // ============ 工具函数 ============
 function showToast(msg) {
@@ -470,35 +473,61 @@ function renderPlatformFilter() {
 
 // ============ 热搜列表渲染 ============
 function getCurrentItems() {
-  const data = window.HOTSEARCH_DATA || [];
-  if (!data || data.length === 0) return { items: [], dateStr: '' };
+  const items = serverItems.length > 0 ? serverItems : [];
   
-  let record;
-  if (currentTimestamp) {
-    record = data.find(r => r.timestamp === currentTimestamp) || data[0];
-  } else {
-    record = data[0];
-  }
+  // 用本地关键词重新计算关联度（因为用户可能改了关键词）
+  const allKws = getAllKeywords();
+  const excludes = getExcludeKeywords();
   
-  let items = (record.items || []).map(item => {
-    // 如果没有预先计算关联度，前端计算
-    if (item.relevance === undefined) {
-      const analysis = analyzeTopic(item.title);
-      return { ...item, ...analysis };
+  const processed = items.map(item => {
+    if (item.relevance !== undefined && !item._needRecompute) return item;
+    
+    const domains = [];
+    const matched = [];
+    const excluded = excludes.some(kw => item.title.includes(kw));
+    if (excluded) return { ...item, domains: [], matchedKeywords: [], relevance: 0, excluded: true };
+    
+    for (const [domain, keywords] of Object.entries(allKws)) {
+      for (const kw of keywords) {
+        if (item.title.includes(kw)) {
+          if (!domains.includes(domain)) domains.push(domain);
+          matched.push(kw);
+        }
+      }
     }
-    return item;
+    
+    return { ...item, domains, matchedKeywords: matched, relevance: matched.length, excluded: false };
   });
   
-  // 过滤掉排除的
-  items = items.filter(item => !item.excluded);
+  // 过滤排除的
+  const filtered = processed.filter(item => !item.excluded);
   
-  // 按关联度降序排序
-  items.sort((a, b) => {
+  // 按关联度排序
+  filtered.sort((a, b) => {
     if ((b.relevance || 0) !== (a.relevance || 0)) return (b.relevance || 0) - (a.relevance || 0);
     return (b.lastSeen || 0) - (a.lastSeen || 0);
   });
   
-  return { items, dateStr: record.dateStr };
+  return { items: filtered, dateStr: serverItems.length > 0 ? new Date().toLocaleString('zh-CN') : '' };
+}
+
+// 从服务端加载数据
+async function loadFromServer() {
+  try {
+    const resp = await fetch(API_BASE + '/api/latest?t=' + Date.now());
+    const data = await resp.json();
+    if (data.success && data.items) {
+      serverItems = data.items;
+      return true;
+    }
+  } catch(e) {
+    console.error('加载服务端数据失败:', e.message);
+  }
+  // 失败则用本地 data.js 的数据
+  if (window.HOTSEARCH_DATA && window.HOTSEARCH_DATA[0]) {
+    serverItems = window.HOTSEARCH_DATA[0].items || [];
+  }
+  return false;
 }
 
 function renderHotList() {
@@ -556,9 +585,30 @@ function renderHotList() {
   }).join('');
 }
 
-// ============ 手动刷新 ============
-function manualRefresh() {
-  showToast('数据每2小时自动更新');
+// ============ 手动刷新（调用服务端） ============
+async function manualRefresh() {
+  const btn = document.getElementById('refresh-btn');
+  btn.classList.add('spin');
+  btn.disabled = true;
+  showToast('正在抓取最新热搜...');
+  
+  try {
+    const resp = await fetch(API_BASE + '/api/refresh?t=' + Date.now(), { method: 'GET' });
+    const data = await resp.json();
+    if (data.success) {
+      // 刷新后重新加载
+      await loadFromServer();
+      renderHotList();
+      showToast(`刷新成功！${data.newCount > 0 ? '新增 ' + data.newCount + ' 条，' : ''}共 ${data.total} 条`);
+    } else {
+      showToast('刷新失败');
+    }
+  } catch(e) {
+    showToast('刷新失败：' + e.message);
+  } finally {
+    btn.classList.remove('spin');
+    btn.disabled = false;
+  }
 }
 
 // ============ 历史记录 ============
@@ -834,7 +884,11 @@ document.head.appendChild(extraStyle);
 
 // ============ 初始化 ============
 renderPlatformFilter();
+// 先显示本地数据，再异步加载服务端
 renderHotList();
+loadFromServer().then(ok => {
+  if (ok) renderHotList();
+});
 </script>
 </body>
 </html>
