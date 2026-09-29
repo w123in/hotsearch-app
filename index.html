@@ -350,7 +350,7 @@ const PLATFORMS = [
   { key: 'bilibili', name: 'B站', color: '#FB7299' }
 ];
 
-const STORAGE_KEY = 'hotsearch_custom_keywords';
+const KW_STORAGE_KEY = 'hotsearch_keywords_v2';
 
 let currentDomain = 'all';
 let currentPlatform = 'all';
@@ -369,46 +369,88 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-// 本地存储自定义关键词
-function getCustomKeywords() {
+// ============ 关键词管理 ============
+// 所有关键词都存在localStorage，可自由增删
+function getAllKeywords() {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-  } catch(e) { return {}; }
+    const stored = JSON.parse(localStorage.getItem(KW_STORAGE_KEY) || 'null');
+    if (stored) return stored;
+  } catch(e) {}
+  // 第一次使用，从默认关键词初始化
+  const init = {};
+  for (const [d, kws] of Object.entries(window.DEFAULT_KEYWORDS)) {
+    init[d] = [...kws];
+  }
+  localStorage.setItem(KW_STORAGE_KEY, JSON.stringify(init));
+  return init;
 }
-function saveCustomKeywords(kw) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(kw));
+function saveAllKeywords(kw) {
+  localStorage.setItem(KW_STORAGE_KEY, JSON.stringify(kw));
 }
 function addKeyword(domain, keyword) {
-  const kw = getCustomKeywords();
+  const kw = getAllKeywords();
   if (!kw[domain]) kw[domain] = [];
   if (!kw[domain].includes(keyword)) kw[domain].push(keyword);
-  saveCustomKeywords(kw);
+  saveAllKeywords(kw);
   return kw;
 }
 function removeKeyword(domain, keyword) {
-  const kw = getCustomKeywords();
+  const kw = getAllKeywords();
   if (kw[domain]) {
     kw[domain] = kw[domain].filter(k => k !== keyword);
-    saveCustomKeywords(kw);
+    saveAllKeywords(kw);
   }
   return kw;
 }
 
-// 分类话题
-function classifyTopic(title) {
+// 排除词管理
+const EXCLUDE_STORAGE_KEY = 'hotsearch_exclude_v2';
+function getExcludeKeywords() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(EXCLUDE_STORAGE_KEY) || 'null');
+    if (stored) return stored;
+  } catch(e) {}
+  const init = [...window.EXCLUDE_KEYWORDS];
+  localStorage.setItem(EXCLUDE_STORAGE_KEY, JSON.stringify(init));
+  return init;
+}
+function saveExcludeKeywords(kw) {
+  localStorage.setItem(EXCLUDE_STORAGE_KEY, JSON.stringify(kw));
+}
+function addExcludeKeyword(keyword) {
+  const kw = getExcludeKeywords();
+  if (!kw.includes(keyword)) kw.push(keyword);
+  saveExcludeKeywords(kw);
+  return kw;
+}
+function removeExcludeKeyword(keyword) {
+  const kw = getExcludeKeywords();
+  const newKw = kw.filter(k => k !== keyword);
+  saveExcludeKeywords(newKw);
+  return newKw;
+}
+
+// 分析话题：计算关联度和赛道
+function analyzeTopic(title) {
   const domains = [];
-  const custom = getCustomKeywords();
-  const allKws = { ...window.DEFAULT_KEYWORDS };
-  for (const [d, kws] of Object.entries(custom)) {
-    if (allKws[d]) allKws[d] = [...new Set([...allKws[d], ...kws])];
-    else allKws[d] = kws;
-  }
+  const matched = [];
+  const allKws = getAllKeywords();
+  const excludes = getExcludeKeywords();
+  
+  // 先检查排除词
+  const excluded = excludes.some(kw => title.includes(kw));
+  if (excluded) return { domains: [], matchedKeywords: [], relevance: 0, excluded: true };
+  
   for (const [domain, keywords] of Object.entries(allKws)) {
-    if (keywords.some(kw => title.includes(kw))) {
-      domains.push(domain);
+    for (const kw of keywords) {
+      if (title.includes(kw)) {
+        if (!domains.includes(domain)) domains.push(domain);
+        matched.push(kw);
+      }
     }
   }
-  return domains;
+  
+  return { domains, matchedKeywords: matched, relevance: matched.length, excluded: false };
 }
 
 // ============ 平台筛选渲染 ============
@@ -427,57 +469,75 @@ function renderPlatformFilter() {
 }
 
 // ============ 热搜列表渲染 ============
-function getCurrentRecord() {
+function getCurrentItems() {
   const data = window.HOTSEARCH_DATA || [];
-  if (!data || data.length === 0) return null;
+  if (!data || data.length === 0) return { items: [], dateStr: '' };
+  
+  let record;
   if (currentTimestamp) {
-    return data.find(r => r.timestamp === currentTimestamp) || data[0];
+    record = data.find(r => r.timestamp === currentTimestamp) || data[0];
+  } else {
+    record = data[0];
   }
-  return data[0];
+  
+  let items = (record.items || []).map(item => {
+    // 如果没有预先计算关联度，前端计算
+    if (item.relevance === undefined) {
+      const analysis = analyzeTopic(item.title);
+      return { ...item, ...analysis };
+    }
+    return item;
+  });
+  
+  // 过滤掉排除的
+  items = items.filter(item => !item.excluded);
+  
+  // 按关联度降序排序
+  items.sort((a, b) => {
+    if ((b.relevance || 0) !== (a.relevance || 0)) return (b.relevance || 0) - (a.relevance || 0);
+    return (b.lastSeen || 0) - (a.lastSeen || 0);
+  });
+  
+  return { items, dateStr: record.dateStr };
 }
 
 function renderHotList() {
   const list = document.getElementById('hot-list');
-  const record = getCurrentRecord();
+  const { items, dateStr } = getCurrentItems();
   
-  if (!record || !record.items || record.items.length === 0) {
+  if (items.length === 0) {
     list.innerHTML = '<div class="empty"><div class="icon">📭</div><br>暂无数据</div>';
     document.getElementById('update-time').textContent = '暂无数据';
     return;
   }
   
-  document.getElementById('update-time').textContent = '更新于 ' + record.dateStr;
+  document.getElementById('update-time').textContent = '更新于 ' + dateStr;
   
-  // 确保每条有domains标记
-  let items = record.items.map(item => {
-    if (!item.domains || item.domains.length === 0) {
-      return { ...item, domains: classifyTopic(item.title) };
-    }
-    return item;
-  });
+  let filtered = items;
   
   // 按赛道筛选
   if (currentDomain !== 'all') {
-    items = items.filter(item => item.domains.includes(currentDomain));
-  } else {
-    // 全部相关：只显示至少属于一个赛道的
-    items = items.filter(item => item.domains.length > 0);
+    filtered = filtered.filter(item => item.domains && item.domains.includes(currentDomain));
   }
   
   // 按平台筛选
   if (currentPlatform !== 'all') {
-    items = items.filter(item => item.platform === currentPlatform);
+    filtered = filtered.filter(item => item.platform === currentPlatform);
   }
   
-  if (items.length === 0) {
+  if (filtered.length === 0) {
     list.innerHTML = '<div class="empty"><div class="icon">🔍</div><br>没有匹配的热搜<br><span style="font-size:11px;">试试切换赛道或平台</span></div>';
     return;
   }
   
-  list.innerHTML = items.map((item, i) => {
+  list.innerHTML = filtered.map((item, i) => {
     const rankClass = i < 3 ? `top${i+1}` : '';
-    const domainTags = item.domains.length > 0
+    const hasRelevance = item.relevance > 0;
+    const domainTags = item.domains && item.domains.length > 0
       ? `<div class="hot-domains">${item.domains.map(d => `<span class="hot-domain-tag">${d}</span>`).join('')}</div>`
+      : '';
+    const relevanceBadge = hasRelevance
+      ? `<span style="font-size:10px;color:${item.relevance >= 3 ? '#FFD700' : item.relevance >= 2 ? '#A29BFE' : '#888'}">${'●'.repeat(item.relevance)}</span>`
       : '';
     return `
       <a href="${item.url}" target="_blank" class="hot-item">
@@ -487,6 +547,7 @@ function renderHotList() {
           <div class="hot-meta">
             <span class="hot-platform" style="background:${item.color || '#666'}22;color:${item.color || '#ccc'}">${item.platform}</span>
             <span>${item.hot || ''}</span>
+            ${relevanceBadge}
           </div>
           ${domainTags}
         </div>
@@ -497,15 +558,7 @@ function renderHotList() {
 
 // ============ 手动刷新 ============
 function manualRefresh() {
-  const btn = document.getElementById('refresh-btn');
-  btn.classList.add('spin');
-  btn.disabled = true;
-  showToast('正在刷新，请稍候...');
-  
-  // 纯静态版本只能重新加载页面获取最新数据
-  setTimeout(() => {
-    location.reload();
-  }, 1000);
+  showToast('数据每2小时自动更新');
 }
 
 // ============ 历史记录 ============
@@ -534,32 +587,69 @@ function viewHistory(timestamp) {
   switchPage('hotsearch');
 }
 
-// ============ 关键词管理 ============
+// ============ 关键词管理页面 ============
+let kwCurrentTab = 'keywords'; // keywords / exclude
+
 function renderKeywords() {
   const container = document.getElementById('keywords-content');
-  const custom = getCustomKeywords();
-  const domains = ['教育', '认知', '家庭', '升学', '艺术', '美学'];
+  const allKws = getAllKeywords();
+  const excludes = getExcludeKeywords();
+  const domains = Object.keys(allKws);
   
-  container.innerHTML = domains.map(domain => {
-    const defaults = window.DEFAULT_KEYWORDS[domain] || [];
-    const customs = custom[domain] || [];
-    return `
+  if (kwCurrentTab === 'keywords') {
+    container.innerHTML = `
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <div class="tab-btn active" onclick="switchKwTab('keywords')">🏷️ 关键词</div>
+        <div class="tab-btn" onclick="switchKwTab('exclude')">🚫 排除词</div>
+      </div>
+      ${domains.map(domain => {
+        const kws = allKws[domain] || [];
+        return `
+          <div class="kn-section">
+            <div class="kn-title">
+              <span>${domain}</span>
+              <span class="kn-count">${kws.length} 个</span>
+            </div>
+            <div class="kn-list">
+              ${kws.map(k => `<span class="kn-tag custom">${escapeHtml(k)}<span class="remove-btn" onclick="doRemoveKeyword('${domain}', '${escapeHtml(k)}')">×</span></span>`).join('')}
+            </div>
+            <div class="kn-add">
+              <input type="text" id="add-kw-${domain}" placeholder="添加关键词...">
+              <button onclick="doAddKeyword('${domain}')">添加</button>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    `;
+  } else {
+    container.innerHTML = `
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <div class="tab-btn" onclick="switchKwTab('keywords')">🏷️ 关键词</div>
+        <div class="tab-btn active" onclick="switchKwTab('exclude')">🚫 排除词</div>
+      </div>
       <div class="kn-section">
         <div class="kn-title">
-          <span>${domain}</span>
-          <span class="kn-count">默认${defaults.length} + 自定义${customs.length}</span>
+          <span>排除词（过滤不想要的内容）</span>
+          <span class="kn-count">${excludes.length} 个</span>
         </div>
         <div class="kn-list">
-          ${defaults.map(k => `<span class="kn-tag">${escapeHtml(k)}</span>`).join('')}
-          ${customs.map(k => `<span class="kn-tag custom">${escapeHtml(k)}<span class="remove-btn" onclick="doRemoveKeyword('${domain}', '${escapeHtml(k)}')">×</span></span>`).join('')}
+          ${excludes.map(k => `<span class="kn-tag custom">${escapeHtml(k)}<span class="remove-btn" onclick="doRemoveExclude('${escapeHtml(k)}')">×</span></span>`).join('')}
         </div>
         <div class="kn-add">
-          <input type="text" id="add-kw-${domain}" placeholder="添加自定义关键词...">
-          <button onclick="doAddKeyword('${domain}')">添加</button>
+          <input type="text" id="add-exclude" placeholder="添加排除词...">
+          <button onclick="doAddExclude()">添加</button>
         </div>
       </div>
+      <div style="font-size:11px;color:#888;margin-top:8px;padding:0 4px;">
+        💡 排除词用于过滤不相关的热搜。比如加"搞笑"，带搞笑的热搜就不会出现了。
+      </div>
     `;
-  }).join('');
+  }
+}
+
+function switchKwTab(tab) {
+  kwCurrentTab = tab;
+  renderKeywords();
 }
 
 function doAddKeyword(domain) {
@@ -567,14 +657,34 @@ function doAddKeyword(domain) {
   const keyword = input.value.trim();
   if (!keyword) return;
   addKeyword(domain, keyword);
+  input.value = '';
   showToast('已添加');
   renderKeywords();
-  renderHotList(); // 重新分类
+  renderHotList();
 }
 
 function doRemoveKeyword(domain, keyword) {
   if (!confirm(`删除关键词"${keyword}"？`)) return;
   removeKeyword(domain, keyword);
+  showToast('已删除');
+  renderKeywords();
+  renderHotList();
+}
+
+function doAddExclude() {
+  const input = document.getElementById('add-exclude');
+  const keyword = input.value.trim();
+  if (!keyword) return;
+  addExcludeKeyword(keyword);
+  input.value = '';
+  showToast('已添加');
+  renderKeywords();
+  renderHotList();
+}
+
+function doRemoveExclude(keyword) {
+  if (!confirm(`删除排除词"${keyword}"？`)) return;
+  removeExcludeKeyword(keyword);
   showToast('已删除');
   renderKeywords();
   renderHotList();
@@ -608,6 +718,28 @@ document.querySelectorAll('#domain-tabs .tab-chip').forEach(chip => {
     renderHotList();
   });
 });
+
+// ============ 额外样式（关键词tab切换按钮） ============
+const extraStyle = document.createElement('style');
+extraStyle.textContent = `
+.tab-btn {
+  flex: 1;
+  padding: 10px;
+  text-align: center;
+  background: #1A1925;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #888;
+  cursor: pointer;
+  border: 1px solid #252336;
+}
+.tab-btn.active {
+  background: rgba(108, 92, 231, 0.2);
+  color: #A29BFE;
+  border-color: #6C5CE7;
+}
+`;
+document.head.appendChild(extraStyle);
 
 // ============ 初始化 ============
 renderPlatformFilter();
