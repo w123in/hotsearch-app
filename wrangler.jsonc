@@ -1,0 +1,20 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "hotsearch-app",
+  "compatibility_date": "2026-09-26",
+  "observability": {
+    "enabled": true
+  },
+  "kv_namespaces": [
+    {
+      "binding": "HOTSEARCH_KV",
+      "id": "hotsearch-data"
+    }
+  ],
+  "assets": {
+    "directory": "."
+  },
+  "triggers": {
+    "crons": ["0 */2 * * *"]
+  }
+}
