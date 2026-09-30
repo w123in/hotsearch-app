@@ -6,1020 +6,668 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#6C5CE7">
-<title>🔥 热搜追踪 · 灵感盒子</title>
-<script src="data.js"></script>
-<script src="keywords.js"></script>
+<title>热搜追踪 · 灵感盒子</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
-  background: #0F0E17;
-  color: #F5F5F7;
-  min-height: 100vh;
-  font-size: 14px;
-  padding-bottom: 80px;
+  background: #0F0E17; color: #F5F5F7; min-height: 100vh; font-size: 14px; padding-bottom: 70px;
 }
-
-/* Header */
 .header {
   background: linear-gradient(135deg, #6C5CE7 0%, #A29BFE 100%);
-  padding: 20px 16px 16px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  padding: 20px 16px 14px; position: sticky; top: 0; z-index: 100;
 }
-.header h1 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
-.header .subtitle { font-size: 12px; opacity: 0.85; margin-bottom: 12px; }
-.header .time { font-size: 11px; opacity: 0.75; }
-
-/* Tab Bar */
-.tab-bar {
-  display: flex;
-  background: #1A1925;
-  border-bottom: 1px solid #252336;
-  position: sticky;
-  top: 76px;
-  z-index: 99;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-.tab-bar::-webkit-scrollbar { display: none; }
-.tab-chip {
-  flex: 0 0 auto;
-  padding: 10px 16px;
-  font-size: 13px;
-  color: #888;
-  border-bottom: 2px solid transparent;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.2s;
-}
-.tab-chip.active { color: #A29BFE; border-bottom-color: #6C5CE7; font-weight: 600; }
-
-/* Platform Filter */
-.platform-filter {
-  display: flex;
-  gap: 8px;
-  padding: 12px 16px;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-.platform-filter::-webkit-scrollbar { display: none; }
-.platform-chip {
-  flex: 0 0 auto;
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 12px;
-  background: #252336;
-  color: #ccc;
-  border: 1px solid transparent;
-  cursor: pointer;
-}
-.platform-chip.active { background: rgba(108, 92, 231, 0.2); color: #A29BFE; border-color: #6C5CE7; }
-
-/* Filter Bar */
-.filter-bar {
-  padding: 8px 16px 12px;
-  background: #0F0E17;
-  border-bottom: 1px solid #1A1925;
-}
-.filter-group {
-  margin-bottom: 8px;
-}
-.filter-group:last-child {
-  margin-bottom: 0;
-}
-.filter-label {
-  font-size: 11px;
-  color: #888;
-  margin-right: 8px;
-  display: inline-block;
-  width: 28px;
-}
-.filter-chips {
-  display: inline-flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  vertical-align: middle;
-}
-.filter-chip {
-  padding: 4px 10px;
-  font-size: 12px;
-  border-radius: 20px;
-  background: #1A1925;
-  color: #888;
-  border: 1px solid transparent;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.filter-chip.active {
-  background: rgba(108, 92, 231, 0.2);
-  color: #A29BFE;
-  border-color: #6C5CE7;
-}
-
-/* Hot List */
-.hot-list { padding: 0 16px; }
-.hot-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 14px 0;
-  border-bottom: 1px solid #1A1925;
-  text-decoration: none;
-  color: inherit;
-}
-.hot-item:active { background: #1A1925; margin: 0 -16px; padding-left: 16px; padding-right: 16px; }
-.hot-rank {
-  flex: 0 0 24px;
-  height: 24px;
-  border-radius: 6px;
-  background: #252336;
-  color: #888;
-  font-size: 12px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.hot-rank.top1 { background: #FF4757; color: white; }
-.hot-rank.top2 { background: #FF7F50; color: white; }
-.hot-rank.top3 { background: #FFA502; color: white; }
-.hot-content { flex: 1; min-width: 0; }
-.hot-title {
-  font-size: 14px;
-  line-height: 1.5;
-  margin-bottom: 6px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.hot-meta { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #888; }
-.hot-platform { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 500; }
-.hot-domains { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
-.hot-domain-tag { padding: 1px 6px; border-radius: 4px; font-size: 10px; background: rgba(108, 92, 231, 0.15); color: #A29BFE; }
-
-/* Bottom Nav */
-.bottom-nav {
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
-  background: #1A1925;
-  border-top: 1px solid #252336;
-  display: flex;
-  z-index: 100;
-  padding-bottom: env(safe-area-inset-bottom);
-}
-.nav-item {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 8px 0;
-  gap: 2px;
-  font-size: 10px;
-  color: #888;
-  cursor: pointer;
-}
-.nav-item.active { color: #A29BFE; }
-.nav-icon { font-size: 20px; }
-
-/* Keywords Page */
-.keywords-page { padding: 16px; }
-.kn-section {
-  background: #1A1925;
-  border-radius: 12px;
-  margin-bottom: 16px;
-  overflow: hidden;
-}
-.kn-title {
-  padding: 14px 16px;
-  font-weight: 600;
-  font-size: 14px;
-  border-bottom: 1px solid #252336;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.kn-count { font-size: 12px; color: #888; font-weight: 400; }
-.kn-list {
-  padding: 12px 16px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.kn-tag {
-  padding: 5px 10px;
-  border-radius: 16px;
-  font-size: 12px;
-  background: #252336;
-  color: #ccc;
-}
-.kn-tag.custom {
-  background: rgba(108, 92, 231, 0.2);
-  color: #A29BFE;
-  position: relative;
-  padding-right: 22px;
-}
-.kn-tag .remove-btn {
-  position: absolute;
-  right: 6px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 14px;
-  color: #888;
-  cursor: pointer;
-}
-.kn-add {
-  padding: 12px 16px;
-  border-top: 1px solid #252336;
-  display: flex;
-  gap: 8px;
-}
-.kn-add input {
-  flex: 1;
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: 1px solid #252336;
-  background: #0F0E17;
-  color: #F5F5F7;
-  font-size: 13px;
-}
-.kn-add button {
-  padding: 8px 16px;
-  border-radius: 8px;
-  background: #6C5CE7;
-  color: white;
-  border: none;
-  font-size: 13px;
-  font-weight: 500;
-}
-
-/* History Page */
-.history-page { padding: 16px; }
-.history-item {
-  background: #1A1925;
-  border-radius: 12px;
-  padding: 14px 16px;
-  margin-bottom: 10px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-}
-.history-item:active { background: #252336; }
-.history-time { font-size: 14px; font-weight: 500; }
-.history-count { font-size: 12px; color: #888; margin-top: 4px; }
-
-/* Loading */
-.loading { text-align: center; padding: 60px 20px; color: #888; font-size: 13px; }
-.empty { text-align: center; padding: 60px 20px; color: #666; font-size: 13px; }
-.empty .icon { font-size: 40px; margin-bottom: 12px; }
-
-/* Refresh btn */
+.header h1 { font-size: 18px; font-weight: 700; color: #fff; }
+.header .sub { font-size: 12px; color: rgba(255,255,255,0.8); margin-top: 4px; }
 .refresh-btn {
-  position: fixed;
-  right: 16px;
-  bottom: 80px;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: #6C5CE7;
-  color: white;
-  border: none;
-  font-size: 20px;
-  box-shadow: 0 4px 16px rgba(108, 92, 231, 0.4);
-  z-index: 90;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+  background: rgba(255,255,255,0.2); border: none; color: #fff;
+  width: 36px; height: 36px; border-radius: 50%; font-size: 16px; cursor: pointer;
 }
-.refresh-btn:active { transform: scale(0.95); }
-.refresh-btn.spin { animation: spin 1s linear infinite; }
+.tabs { display: flex; gap: 0; padding: 0; background: #1A1B2E; overflow-x: auto; }
+.tabs button {
+  flex: 1; min-width: 60px; padding: 10px 4px; border: none; background: none;
+  color: #8899A6; font-size: 13px; cursor: pointer; border-bottom: 2px solid transparent;
+  white-space: nowrap;
+}
+.tabs button.active { color: #6C5CE7; border-bottom-color: #6C5CE7; font-weight: 600; }
+.filters { padding: 10px 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+.filter-select {
+  background: #1A1B2E; color: #F5F5F7; border: 1px solid #2D2E44;
+  padding: 6px 10px; border-radius: 8px; font-size: 12px; cursor: pointer;
+}
+.list { padding: 8px 12px; }
+.item {
+  background: #1A1B2E; border-radius: 12px; padding: 12px; margin-bottom: 8px;
+  display: flex; gap: 10px; align-items: flex-start;
+}
+.item:hover { background: #252640; }
+.rank {
+  width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center;
+  justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0;
+}
+.rank-1 { background: #FF4757; color: #fff; }
+.rank-2 { background: #FF6B81; color: #fff; }
+.rank-3 { background: #FFA502; color: #fff; }
+.rank-other { background: #2D2E44; color: #8899A6; }
+.item-content { flex: 1; min-width: 0; }
+.item-title { font-size: 14px; font-weight: 500; line-height: 1.4; color: #F5F5F7; }
+.item-meta { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.tag {
+  font-size: 11px; padding: 2px 8px; border-radius: 6px;
+  background: #2D2E44; color: #8899A6;
+}
+.tag-platform { color: #fff; }
+.tag-domain { background: #6C5CE7; color: #fff; }
+.tag-hot { background: #FF4757; color: #fff; }
+.item-link {
+  font-size: 12px; color: #6C5CE7; text-decoration: none; margin-top: 4px; display: inline-block;
+}
+.empty { text-align: center; padding: 40px 20px; color: #555; font-size: 14px; }
+.loading { text-align: center; padding: 40px 20px; color: #888; }
+.loading .spinner {
+  width: 32px; height: 32px; border: 3px solid #2D2E44; border-top-color: #6C5CE7;
+  border-radius: 50%; margin: 0 auto 12px; animation: spin 0.8s linear infinite;
+}
 @keyframes spin { to { transform: rotate(360deg); } }
-
-/* Toast */
-.toast {
-  position: fixed;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  background: rgba(0,0,0,0.8);
-  color: white;
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-size: 13px;
-  z-index: 999;
-  opacity: 0;
-  transition: opacity 0.3s;
-  pointer-events: none;
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0; background: #1A1B2E;
+  display: flex; border-top: 1px solid #2D2E44; z-index: 100;
 }
-.toast.show { opacity: 1; }
+.bottom-nav button {
+  flex: 1; padding: 10px 0; border: none; background: none; color: #555;
+  font-size: 12px; cursor: pointer; display: flex; flex-direction: column;
+  align-items: center; gap: 2px;
+}
+.bottom-nav button.active { color: #6C5CE7; }
+.bottom-nav .icon { font-size: 18px; }
 
-/* Page hide */
-.page { display: none; }
-.page.active { display: block; }
+/* Keyword page */
+.kw-section { padding: 12px; }
+.kw-section h3 { font-size: 14px; color: #8899A6; margin-bottom: 8px; }
+.kw-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.kw-tag {
+  background: #2D2E44; color: #F5F5F7; padding: 4px 10px; border-radius: 8px;
+  font-size: 12px; display: flex; align-items: center; gap: 4px;
+}
+.kw-tag .del { color: #FF4757; cursor: pointer; font-size: 14px; line-height: 1; }
+.kw-add { display: flex; gap: 6px; margin-bottom: 16px; }
+.kw-add input {
+  flex: 1; background: #1A1B2E; border: 1px solid #2D2E44; color: #F5F5F7;
+  padding: 6px 10px; border-radius: 8px; font-size: 12px;
+}
+.kw-add button {
+  background: #6C5CE7; color: #fff; border: none; padding: 6px 14px;
+  border-radius: 8px; font-size: 12px; cursor: pointer;
+}
+.domain-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px; }
+.domain-tab {
+  padding: 6px 12px; border-radius: 8px; font-size: 12px; cursor: pointer;
+  background: #1A1B2E; color: #8899A6; border: 1px solid #2D2E44;
+}
+.domain-tab.active { background: #6C5CE7; color: #fff; }
+.domain-tab .del { color: rgba(255,255,255,0.6); margin-left: 4px; }
+.history-item { background: #1A1B2E; padding: 10px 12px; border-radius: 8px; margin-bottom: 6px; font-size: 12px; color: #8899A6; }
+.history-item .count { color: #6C5CE7; font-weight: 600; }
 </style>
 </head>
 <body>
 
-<!-- Header -->
 <div class="header">
-  <h1>🔥 热搜追踪</h1>
-  <div class="subtitle">教育 · 认知 · 家庭 · 升学 · 艺术 · 美学</div>
-  <div class="time" id="update-time">加载中...</div>
+  <h1>热搜追踪</h1>
+  <div class="sub" id="lastUpdate">加载中...</div>
+  <button class="refresh-btn" id="refreshBtn" title="刷新">↻</button>
 </div>
 
-<!-- Tab Bar -->
-<div class="tab-bar" id="domain-tabs">
-  <div class="tab-chip active" data-domain="all">全部相关</div>
-  <div class="tab-chip" data-domain="教育">教育</div>
-  <div class="tab-chip" data-domain="认知">认知</div>
-  <div class="tab-chip" data-domain="家庭">家庭</div>
-  <div class="tab-chip" data-domain="升学">升学</div>
-  <div class="tab-chip" data-domain="艺术">艺术</div>
-  <div class="tab-chip" data-domain="美学">美学</div>
+<div class="tabs" id="domainTabs"></div>
+
+<div class="filters">
+  <select class="filter-select" id="platformFilter">
+    <option value="">全部平台</option>
+  </select>
+  <select class="filter-select" id="sortFilter">
+    <option value="relevance">关联度优先</option>
+    <option value="hot">热度优先</option>
+    <option value="time">最新优先</option>
+  </select>
+  <select class="filter-select" id="timeFilter">
+    <option value="0">全部时间</option>
+    <option value="1">今天</option>
+    <option value="2">昨天</option>
+    <option value="3">近3天</option>
+    <option value="7">近7天</option>
+  </select>
 </div>
 
-<!-- Platform Filter -->
-<div class="platform-filter" id="platform-filter">
-  <div class="platform-chip active" data-platform="all">全部平台</div>
-</div>
-
-<!-- Sort & Date Filter -->
-<div class="filter-bar">
-  <div class="filter-group">
-    <span class="filter-label">排序</span>
-    <div class="filter-chips" id="sort-filter">
-      <div class="filter-chip active" data-sort="relevance">关联度</div>
-      <div class="filter-chip" data-sort="hot">热度</div>
-      <div class="filter-chip" data-sort="time">最新</div>
-    </div>
-  </div>
-  <div class="filter-group">
-    <span class="filter-label">时间</span>
-    <div class="filter-chips" id="date-filter">
-      <div class="filter-chip active" data-date="all">全部</div>
-      <div class="filter-chip" data-date="today">今天</div>
-      <div class="filter-chip" data-date="yesterday">昨天</div>
-      <div class="filter-chip" data-date="3d">近3天</div>
-      <div class="filter-chip" data-date="7d">近7天</div>
-    </div>
+<div id="pageContent">
+  <div class="list" id="hotList">
+    <div class="loading"><div class="spinner"></div>正在抓取热搜数据...</div>
   </div>
 </div>
 
-<!-- Hot Search Page -->
-<div class="page active" id="page-hotsearch">
-  <div class="hot-list" id="hot-list">
-    <div class="loading">加载中...</div>
-  </div>
-</div>
-
-<!-- Keywords Page -->
-<div class="page" id="page-keywords">
-  <div class="keywords-page" id="keywords-content"></div>
-</div>
-
-<!-- History Page -->
-<div class="page" id="page-history">
-  <div class="history-page" id="history-list"></div>
-</div>
-
-<!-- Refresh Button -->
-<button class="refresh-btn" id="refresh-btn" onclick="manualRefresh()">🔄</button>
-
-<!-- Bottom Nav -->
 <div class="bottom-nav">
-  <div class="nav-item active" data-page="hotsearch">
-    <div class="nav-icon">🔥</div><div>热搜</div>
-  </div>
-  <div class="nav-item" data-page="history">
-    <div class="nav-icon">📅</div><div>历史</div>
-  </div>
-  <div class="nav-item" data-page="keywords">
-    <div class="nav-icon">🏷️</div><div>关键词</div>
-  </div>
+  <button id="navHot" class="active"><span class="icon">🔥</span><span>热搜</span></button>
+  <button id="navHistory"><span class="icon">📅</span><span>历史</span></button>
+  <button id="navKeywords"><span class="icon">🏷️</span><span>关键词</span></button>
 </div>
 
-<div class="toast" id="toast"></div>
-
-<script src="fetcher.js"></script>
 <script>
-// ============ 配置 ============
-const PLATFORMS = [
-  { key: 'weibo', name: '微博', color: '#E6162D' },
-  { key: 'douyin', name: '抖音', color: '#000000' },
-  { key: 'zhihu', name: '知乎', color: '#0066FF' },
-  { key: 'baidu', name: '百度', color: '#2932E1' },
-  { key: 'bilibili', name: 'B站', color: '#FB7299' }
+// ===== Config =====
+const TOPHUB_BASE = 'https://tophub.today';
+const CORS_PROXIES = [
+  'https://api.allorigins.win/raw?url=',
+  'https://corsproxy.io/?url=',
+  'https://api.codetabs.com/v1/proxy/?quest='
+];
+const STORAGE_KEY = 'hotsearch_data';
+const HISTORY_KEY = 'hotsearch_history';
+const KEYWORDS_KEY = 'hotsearch_keywords';
+const HISTORY_DAYS = 7;
+
+const PLATFORMS = {
+  weibo: { name: '微博', nodeId: 'KqndgxeLl9', color: '#E6162D' },
+  douyin: { name: '抖音', nodeId: 'DpQvNABoNE', color: '#000000' },
+  zhihu: { name: '知乎', nodeId: 'mproPpoq6O', color: '#0066FF' },
+  baidu: { name: '百度', nodeId: 'Jb0vmloB1G', color: '#2932E1' },
+  bilibili: { name: 'B站', nodeId: '74KvxwokxM', color: '#FB7299' }
+};
+
+const DEFAULT_KEYWORDS = {
+  '教育': ['教育','学校','老师','学生','学习','高考','中考','考研','大学','专业','课程','成绩','补课','教培','双减','作业','考试','留学','申请','名校','录取','志愿','报考','学霸','学区房','课外班'],
+  '认知': ['认知','思维','思考','底层逻辑','成长','提升','学习方法','效率','思维方式','认知升级','觉醒','开悟','格局','眼界','圈层','信息差','认知差'],
+  '家庭': ['家庭','家长','父母','亲子','育儿','孩子','妈妈','爸爸','婚姻','夫妻','家庭关系','家庭教育','青春期','婆媳','带娃','鸡娃','陪读','全职妈妈','宝妈'],
+  '升学': ['升学','志愿','报考','录取','高考志愿','专业选择','留学','出国','名校','985','211','考研','考公','就业','offer','保研','春招','秋招','选调'],
+  '艺术': ['艺术','美术','音乐','设计','文化','传统','非遗','博物馆','展览','艺术家','画作','书法','国画','油画','雕塑','摄影','电影','戏剧','艺术展','艺术留学'],
+  '美学': ['美学','审美','美','文艺','人文','文学','哲学','人生','生活方式','品味','气质','优雅','艺术感','审美提升','生活美学']
+};
+
+const DEFAULT_EXCLUDE = [
+  '搞笑','段子','整活','表情包','梗','爆笑','沙雕','鬼畜','恶搞',
+  '游戏','王者荣耀','英雄联盟','原神','吃鸡','主播','网红',
+  '明星','八卦','绯闻','吃瓜','恋情',
+  '美食','吃播','探店','旅游','穿搭','美妆',
+  'cos','cosplay','漫展','二次元',
+  '宠物','萌宠',
+  '体育','足球','篮球','世界杯','奥运会'
 ];
 
-const API_BASE = '';
-const KW_STORAGE_KEY = 'hotsearch_keywords_v2';
+// ===== State =====
+let allItems = [];
+let currentDomain = '';
+let currentPlatform = '';
+let currentSort = 'relevance';
+let currentTime = 0;
+let currentNav = 'hot';
 
-let currentDomain = 'all';
-let currentPlatform = 'all';
-let currentTimestamp = null;
-let currentSort = 'relevance'; // relevance / hot / time
-let currentDateRange = 'all'; // all / today / yesterday / 3d / 7d
-let serverItems = []; // 从服务端加载的数据
-
-// ============ 工具函数 ============
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2000);
-}
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
-
-// ============ 关键词管理 ============
-// 所有关键词都存在localStorage，可自由增删
-function getAllKeywords() {
+// ===== Storage =====
+function loadData() {
   try {
-    const stored = JSON.parse(localStorage.getItem(KW_STORAGE_KEY) || 'null');
-    if (stored) return stored;
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) { const data = JSON.parse(raw); if (data && Array.isArray(data)) return data; }
   } catch(e) {}
-  // 第一次使用，从默认关键词初始化
-  const init = {};
-  for (const [d, kws] of Object.entries(window.DEFAULT_KEYWORDS)) {
-    init[d] = [...kws];
-  }
-  localStorage.setItem(KW_STORAGE_KEY, JSON.stringify(init));
-  return init;
+  return [];
 }
-function saveAllKeywords(kw) {
-  localStorage.setItem(KW_STORAGE_KEY, JSON.stringify(kw));
+function saveData(items) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); } catch(e) {}
 }
-function addKeyword(domain, keyword) {
-  const kw = getAllKeywords();
-  if (!kw[domain]) kw[domain] = [];
-  if (!kw[domain].includes(keyword)) kw[domain].push(keyword);
-  saveAllKeywords(kw);
-  return kw;
-}
-function removeKeyword(domain, keyword) {
-  const kw = getAllKeywords();
-  if (kw[domain]) {
-    kw[domain] = kw[domain].filter(k => k !== keyword);
-    saveAllKeywords(kw);
-  }
-  return kw;
-}
-
-// 排除词管理
-const EXCLUDE_STORAGE_KEY = 'hotsearch_exclude_v2';
-function getExcludeKeywords() {
+function loadHistory() {
   try {
-    const stored = JSON.parse(localStorage.getItem(EXCLUDE_STORAGE_KEY) || 'null');
-    if (stored) return stored;
+    const raw = localStorage.getItem(HISTORY_KEY);
+    if (raw) { const data = JSON.parse(raw); if (data && Array.isArray(data)) return data; }
   } catch(e) {}
-  const init = [...window.EXCLUDE_KEYWORDS];
-  localStorage.setItem(EXCLUDE_STORAGE_KEY, JSON.stringify(init));
-  return init;
+  return [];
 }
-function saveExcludeKeywords(kw) {
-  localStorage.setItem(EXCLUDE_STORAGE_KEY, JSON.stringify(kw));
+function saveHistory(history) {
+  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history)); } catch(e) {}
 }
-function addExcludeKeyword(keyword) {
-  const kw = getExcludeKeywords();
-  if (!kw.includes(keyword)) kw.push(keyword);
-  saveExcludeKeywords(kw);
-  return kw;
+function loadKeywords() {
+  try {
+    const raw = localStorage.getItem(KEYWORDS_KEY);
+    if (raw) {
+      const data = JSON.parse(raw);
+      if (data && data.keywords) return data;
+    }
+  } catch(e) {}
+  return { keywords: JSON.parse(JSON.stringify(DEFAULT_KEYWORDS)), exclude: [...DEFAULT_EXCLUDE] };
 }
-function removeExcludeKeyword(keyword) {
-  const kw = getExcludeKeywords();
-  const newKw = kw.filter(k => k !== keyword);
-  saveExcludeKeywords(newKw);
-  return newKw;
+function saveKeywords(data) {
+  try { localStorage.setItem(KEYWORDS_KEY, JSON.stringify(data)); } catch(e) {}
 }
 
-// 分析话题：计算关联度和赛道
-function analyzeTopic(title) {
-  const domains = [];
-  const matched = [];
-  const allKws = getAllKeywords();
-  const excludes = getExcludeKeywords();
-  
-  // 先检查排除词
-  const excluded = excludes.some(kw => title.includes(kw));
-  if (excluded) return { domains: [], matchedKeywords: [], relevance: 0, excluded: true };
-  
-  for (const [domain, keywords] of Object.entries(allKws)) {
-    for (const kw of keywords) {
+// ===== Fetch =====
+async function fetchViaProxy(url) {
+  for (const proxy of CORS_PROXIES) {
+    try {
+      const proxyUrl = proxy + encodeURIComponent(url);
+      const resp = await fetch(proxyUrl, { signal: AbortSignal.timeout(15000) });
+      if (resp.ok) {
+        const text = await resp.text();
+        if (text && text.length > 100) return text;
+      }
+    } catch(e) { continue; }
+  }
+  return null;
+}
+
+async function fetchPlatform(platformKey) {
+  const platform = PLATFORMS[platformKey];
+  if (!platform) return [];
+  const url = TOPHUB_BASE + '/n/' + platform.nodeId;
+  const html = await fetchViaProxy(url);
+  if (!html) return [];
+  return parseHotList(html, platform.name, platform.color, platformKey);
+}
+
+function parseHotList(html, platformName, color, platformKey) {
+  const items = [];
+  const m = html.match(/<tbody[^>]*>([\s\S]*?)<\/tbody>/);
+  if (!m) return items;
+  const tbody = m[1];
+  const trRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/g;
+  let match;
+  while ((match = trRegex.exec(tbody)) !== null) {
+    const tr = match[1];
+    const rankMatch = tr.match(/<td[^>]*>\s*(\d+)\.\s*<\/td>/);
+    if (!rankMatch) continue;
+    const rank = parseInt(rankMatch[1]);
+    const linkRegex = /<a[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g;
+    let title = '', url = '', lm;
+    while ((lm = linkRegex.exec(tr)) !== null) {
+      const t = lm[2].replace(/<[^>]*>/g, '').trim();
+      if (t.length > 4 && !lm[1].includes('#') && !lm[2].includes('m-n')) {
+        title = t; url = lm[1]; break;
+      }
+    }
+    if (!title || title.length < 3) continue;
+    let hot = '';
+    const wsMatch = tr.match(/class="ws"[^>]*>\s*([^<]+?)\s*<\//);
+    if (wsMatch) hot = wsMatch[1].trim();
+    else {
+      const em = tr.match(/class="item-extra"[^>]*>\s*([^<]+?)\s*<\//);
+      if (em) hot = em[1].trim();
+    }
+    items.push({ rank, title, url, hot, platform: platformName, platformKey, color });
+    if (items.length >= 50) break;
+  }
+  return items;
+}
+
+function analyzeTopic(title, keywords, exclude) {
+  const domains = [], matched = [];
+  const excluded = exclude.some(kw => title.includes(kw));
+  if (excluded) return { domains, matchedKeywords: matched, relevance: 0, excluded: true };
+  for (const [domain, kws] of Object.entries(keywords)) {
+    for (const kw of kws) {
       if (title.includes(kw)) {
         if (!domains.includes(domain)) domains.push(domain);
         matched.push(kw);
       }
     }
   }
-  
   return { domains, matchedKeywords: matched, relevance: matched.length, excluded: false };
 }
 
-// ============ 平台筛选渲染 ============
-function renderPlatformFilter() {
-  const container = document.getElementById('platform-filter');
-  container.innerHTML = '<div class="platform-chip active" data-platform="all">全部平台</div>' +
-    PLATFORMS.map(p => `<div class="platform-chip" data-platform="${p.name}">${p.name}</div>`).join('');
-  container.querySelectorAll('.platform-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      container.querySelectorAll('.platform-chip').forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-      currentPlatform = chip.dataset.platform;
-      renderHotList();
-    });
-  });
-}
+async function fetchAllHotSearch() {
+  const kwData = loadKeywords();
+  const now = Date.now();
+  const allNewItems = [];
 
-// ============ 排序和日期筛选 ============
-function initSortAndDateFilter() {
-  // 排序
-  document.querySelectorAll('#sort-filter .filter-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      document.querySelectorAll('#sort-filter .filter-chip').forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-      currentSort = chip.dataset.sort;
-      renderHotList();
-    });
-  });
-  // 日期
-  document.querySelectorAll('#date-filter .filter-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      document.querySelectorAll('#date-filter .filter-chip').forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-      currentDateRange = chip.dataset.date;
-      renderHotList();
-    });
-  });
-}
-
-// ============ 热搜列表渲染 ============
-function parseHot(hotStr) {
-  if (!hotStr) return 0;
-  const s = hotStr.toString();
-  if (s.includes('万')) return parseFloat(s) * 10000;
-  if (s.includes('亿')) return parseFloat(s) * 100000000;
-  return parseInt(s.replace(/,/g, '')) || 0;
-}
-
-function getDateRangeStart() {
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  switch(currentDateRange) {
-    case 'today': return today;
-    case 'yesterday': return today - 86400000;
-    case '3d': return today - 2 * 86400000; // 近3天（含今天）
-    case '7d': return today - 6 * 86400000;
-    default: return 0;
+  for (const key of Object.keys(PLATFORMS)) {
+    const items = await fetchPlatform(key);
+    allNewItems.push(...items);
+    await new Promise(r => setTimeout(r, 300));
   }
+
+  const oldItems = loadData();
+  const itemMap = new Map();
+  oldItems.forEach(item => itemMap.set(item.platform + '_' + item.title, item));
+
+  let newCount = 0;
+  for (const item of allNewItems) {
+    const analysis = analyzeTopic(item.title, kwData.keywords, kwData.exclude);
+    if (analysis.excluded) continue;
+    const id = item.platform + '_' + item.title;
+    if (!itemMap.has(id)) {
+      itemMap.set(id, {
+        ...item,
+        domains: analysis.domains,
+        matchedKeywords: analysis.matchedKeywords,
+        relevance: analysis.relevance,
+        firstSeen: now,
+        lastSeen: now
+      });
+      newCount++;
+    } else {
+      const old = itemMap.get(id);
+      old.rank = item.rank;
+      old.hot = item.hot;
+      old.lastSeen = now;
+    }
+  }
+
+  const cutoff = now - HISTORY_DAYS * 24 * 60 * 60 * 1000;
+  const freshItems = [...itemMap.values()]
+    .filter(item => (item.lastSeen || 0) > cutoff)
+    .sort((a, b) => (b.relevance || 0) - (a.relevance || 0));
+
+  saveData(freshItems);
+
+  const history = loadHistory();
+  history.unshift({
+    timestamp: now,
+    dateStr: new Date(now).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }),
+    count: freshItems.length,
+    newCount: newCount,
+    relevantCount: freshItems.filter(i => i.relevance > 0).length
+  });
+  if (history.length > 50) history.length = 50;
+  saveHistory(history);
+
+  allItems = freshItems;
+  return { total: freshItems.length, newCount, relevant: freshItems.filter(i => i.relevance > 0).length };
 }
 
-function getDateRangeEnd() {
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  if (currentDateRange === 'yesterday') return today; // 昨天结束=今天开始
-  return Date.now();
+// ===== Render =====
+function renderDomainTabs() {
+  const kwData = loadKeywords();
+  const tabs = document.getElementById('domainTabs');
+  let html = '<button class="' + (currentDomain === '' ? 'active' : '') + '" data-domain="">全部</button>';
+  for (const domain of Object.keys(kwData.keywords)) {
+    html += '<button class="' + (currentDomain === domain ? 'active' : '') + '" data-domain="' + domain + '">' + domain + '</button>';
+  }
+  tabs.innerHTML = html;
+  tabs.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => { currentDomain = btn.dataset.domain; renderDomainTabs(); renderList(); });
+  });
 }
 
-function getCurrentItems() {
-  const items = serverItems.length > 0 ? serverItems : [];
-  
-  // 用本地关键词重新计算关联度
-  const allKws = getAllKeywords();
-  const excludes = getExcludeKeywords();
-  
-  let processed = items.map(item => {
-    const domains = [];
-    const matched = [];
-    const excluded = excludes.some(kw => item.title.includes(kw));
-    if (excluded) return { ...item, domains: [], matchedKeywords: [], relevance: 0, excluded: true };
-    
-    for (const [domain, keywords] of Object.entries(allKws)) {
-      for (const kw of keywords) {
-        if (item.title.includes(kw)) {
-          if (!domains.includes(domain)) domains.push(domain);
-          matched.push(kw);
-        }
+function renderPlatformFilter() {
+  const select = document.getElementById('platformFilter');
+  let html = '<option value="">全部平台</option>';
+  for (const key of Object.keys(PLATFORMS)) {
+    html += '<option value="' + key + '">' + PLATFORMS[key].name + '</option>';
+  }
+  select.innerHTML = html;
+}
+
+function parseHotValue(hotStr) {
+  if (!hotStr) return 0;
+  const num = parseFloat(hotStr.replace(/[^\d.]/g, ''));
+  if (isNaN(num)) return 0;
+  if (hotStr.includes('万')) return num * 10000;
+  if (hotStr.includes('亿')) return num * 100000000;
+  return num;
+}
+
+function renderList() {
+  const list = document.getElementById('hotList');
+  let items = [...allItems];
+
+  if (currentDomain) {
+    items = items.filter(item => item.domains && item.domains.includes(currentDomain));
+  }
+  if (currentPlatform) {
+    items = items.filter(item => item.platformKey === currentPlatform);
+  }
+
+  const now = Date.now();
+  if (currentTime > 0) {
+    const cutoff = now - currentTime * 24 * 60 * 60 * 1000;
+    items = items.filter(item => (item.firstSeen || 0) > cutoff);
+  }
+
+  if (currentSort === 'relevance') {
+    items.sort((a, b) => (b.relevance || 0) - (a.relevance || 0));
+  } else if (currentSort === 'hot') {
+    items.sort((a, b) => parseHotValue(b.hot) - parseHotValue(a.hot));
+  } else if (currentSort === 'time') {
+    items.sort((a, b) => (b.firstSeen || 0) - (a.firstSeen || 0));
+  }
+
+  if (items.length === 0) {
+    list.innerHTML = '<div class="empty">暂无数据，点击右上角刷新按钮抓取最新热搜</div>';
+    return;
+  }
+
+  let html = '';
+  for (const item of items) {
+    const rankClass = item.rank <= 3 ? 'rank-' + item.rank : 'rank-other';
+    let metaHtml = '';
+    metaHtml += '<span class="tag tag-platform" style="background:' + (item.color || '#333') + '">' + item.platform + '</span>';
+    if (item.hot) metaHtml += '<span class="tag tag-hot">' + item.hot + '</span>';
+    if (item.domains && item.domains.length > 0) {
+      for (const d of item.domains) {
+        metaHtml += '<span class="tag tag-domain">' + d + '</span>';
       }
     }
-    
-    return { ...item, domains, matchedKeywords: matched, relevance: matched.length, excluded: false };
-  });
-  
-  // 过滤排除的
-  processed = processed.filter(item => !item.excluded);
-  
-  // 按日期范围筛选
-  const startTs = getDateRangeStart();
-  const endTs = getDateRangeEnd();
-  if (startTs > 0) {
-    processed = processed.filter(item => {
-      const ts = item.lastSeen || item.firstSeen || 0;
-      return ts >= startTs && ts <= endTs;
-    });
-  }
-  
-  // 排序
-  processed.sort((a, b) => {
-    switch(currentSort) {
-      case 'hot':
-        return parseHot(b.hot) - parseHot(a.hot);
-      case 'time':
-        return (b.lastSeen || 0) - (a.lastSeen || 0);
-      case 'relevance':
-      default:
-        if ((b.relevance || 0) !== (a.relevance || 0)) return (b.relevance || 0) - (a.relevance || 0);
-        return parseHot(b.hot) - parseHot(a.hot);
+    if (item.matchedKeywords && item.matchedKeywords.length > 0) {
+      for (const kw of item.matchedKeywords.slice(0, 3)) {
+        metaHtml += '<span class="tag">' + kw + '</span>';
+      }
     }
-  });
-  
-  return { items: processed, dateStr: serverItems.length > 0 ? new Date().toLocaleString('zh-CN') : '' };
-}
 
-// 从服务端加载数据
-async function loadFromServer() {
-  try {
-    const resp = await fetch(API_BASE + '/api/latest?t=' + Date.now());
-    const data = await resp.json();
-    if (data.success && data.items) {
-      serverItems = data.items;
-      return true;
+    let firstSeenStr = '';
+    if (item.firstSeen) {
+      const d = new Date(item.firstSeen);
+      firstSeenStr = (d.getMonth()+1) + '/' + d.getDate();
     }
-  } catch(e) {
-    console.error('加载服务端数据失败:', e.message);
-  }
-  // 失败则用本地 data.js 的数据
-  if (window.HOTSEARCH_DATA && window.HOTSEARCH_DATA[0]) {
-    serverItems = window.HOTSEARCH_DATA[0].items || [];
-  }
-  return false;
-}
 
-function renderHotList() {
-  const list = document.getElementById('hot-list');
-  const { items, dateStr } = getCurrentItems();
-  
-  if (items.length === 0) {
-    list.innerHTML = '<div class="empty"><div class="icon">📭</div><br>暂无数据</div>';
-    document.getElementById('update-time').textContent = '暂无数据';
-    return;
-  }
-  
-  document.getElementById('update-time').textContent = '更新于 ' + dateStr;
-  
-  let filtered = items;
-  
-  // 按赛道筛选
-  if (currentDomain !== 'all') {
-    filtered = filtered.filter(item => item.domains && item.domains.includes(currentDomain));
-  }
-  
-  // 按平台筛选
-  if (currentPlatform !== 'all') {
-    filtered = filtered.filter(item => item.platform === currentPlatform);
-  }
-  
-  if (filtered.length === 0) {
-    list.innerHTML = '<div class="empty"><div class="icon">🔍</div><br>没有匹配的热搜<br><span style="font-size:11px;">试试切换赛道或平台</span></div>';
-    return;
-  }
-  
-  list.innerHTML = filtered.map((item, i) => {
-    const rankClass = i < 3 ? `top${i+1}` : '';
-    const hasRelevance = item.relevance > 0;
-    const domainTags = item.domains && item.domains.length > 0
-      ? `<div class="hot-domains">${item.domains.map(d => `<span class="hot-domain-tag">${d}</span>`).join('')}</div>`
-      : '';
-    const relevanceBadge = hasRelevance
-      ? `<span style="font-size:10px;color:${item.relevance >= 3 ? '#FFD700' : item.relevance >= 2 ? '#A29BFE' : '#888'}">${'●'.repeat(item.relevance)}</span>`
-      : '';
-    return `
-      <a href="${item.url}" target="_blank" class="hot-item">
-        <div class="hot-rank ${rankClass}">${i+1}</div>
-        <div class="hot-content">
-          <div class="hot-title">${escapeHtml(item.title)}</div>
-          <div class="hot-meta">
-            <span class="hot-platform" style="background:${item.color || '#666'}22;color:${item.color || '#ccc'}">${item.platform}</span>
-            <span>${item.hot || ''}</span>
-            ${relevanceBadge}
-          </div>
-          ${domainTags}
-        </div>
-      </a>
-    `;
-  }).join('');
-}
-
-// ============ 手动刷新（调用服务端） ============
-async function manualRefresh() {
-  const btn = document.getElementById('refresh-btn');
-  btn.classList.add('spin');
-  btn.disabled = true;
-  showToast('正在抓取最新热搜...');
-  
-  try {
-    const resp = await fetch(API_BASE + '/api/refresh?t=' + Date.now(), { method: 'GET' });
-    const data = await resp.json();
-    if (data.success) {
-      // 刷新后重新加载
-      await loadFromServer();
-      renderHotList();
-      showToast(`刷新成功！${data.newCount > 0 ? '新增 ' + data.newCount + ' 条，' : ''}共 ${data.total} 条`);
-    } else {
-      showToast('刷新失败');
+    html += '<div class="item">';
+    html += '<div class="rank ' + rankClass + '">' + item.rank + '</div>';
+    html += '<div class="item-content">';
+    html += '<div class="item-title">' + item.title + '</div>';
+    html += '<div class="item-meta">' + metaHtml + '</div>';
+    if (item.url && item.url !== '#') {
+      html += '<a class="item-link" href="' + item.url + '" target="_blank">查看原文</a>';
     }
-  } catch(e) {
-    showToast('刷新失败：' + e.message);
-  } finally {
-    btn.classList.remove('spin');
-    btn.disabled = false;
+    if (firstSeenStr) html += ' <span class="tag">' + firstSeenStr + '收录</span>';
+    html += '</div></div>';
   }
+  list.innerHTML = html;
 }
 
-// ============ 历史记录 ============
 function renderHistory() {
-  const list = document.getElementById('history-list');
-  const data = window.HOTSEARCH_DATA || [];
-  
-  if (!data || data.length === 0) {
-    list.innerHTML = '<div class="empty"><div class="icon">📅</div><br>暂无历史记录</div>';
+  const history = loadHistory();
+  const list = document.getElementById('pageContent');
+  if (history.length === 0) {
+    list.innerHTML = '<div class="empty">暂无历史记录</div>';
     return;
   }
-  
-  list.innerHTML = data.map(item => `
-    <div class="history-item" onclick="viewHistory(${item.timestamp})">
-      <div>
-        <div class="history-time">${escapeHtml(item.dateStr)}</div>
-        <div class="history-count">${item.items ? item.items.length : 0} 条热搜</div>
-      </div>
-      <div style="color:#888;">›</div>
-    </div>
-  `).join('');
+  let html = '<div class="list">';
+  for (const h of history) {
+    html += '<div class="history-item">';
+    html += '<span>' + h.dateStr + '</span> ';
+    html += '<span class="count">共' + h.count + '条</span> ';
+    if (h.newCount) html += '<span class="count">新增' + h.newCount + '条</span> ';
+    html += '<span>相关' + h.relevantCount + '条</span>';
+    html += '</div>';
+  }
+  html += '</div>';
+  list.innerHTML = html;
 }
-
-function viewHistory(timestamp) {
-  currentTimestamp = timestamp;
-  switchPage('hotsearch');
-}
-
-// ============ 关键词管理页面 ============
-let kwCurrentTab = 'keywords'; // keywords / exclude
 
 function renderKeywords() {
-  const container = document.getElementById('keywords-content');
-  const allKws = getAllKeywords();
-  const excludes = getExcludeKeywords();
-  const domains = Object.keys(allKws);
-  
-  if (kwCurrentTab === 'keywords') {
-    container.innerHTML = `
-      <div style="display:flex;gap:8px;margin-bottom:12px;">
-        <div class="tab-btn active" onclick="switchKwTab('keywords')">🏷️ 关键词</div>
-        <div class="tab-btn" onclick="switchKwTab('exclude')">🚫 排除词</div>
-      </div>
-      <div class="kn-section">
-        <div class="kn-title">
-          <span>📂 赛道分类</span>
-          <span class="kn-count">${domains.length} 个赛道</span>
-        </div>
-        <div class="kn-list">
-          ${domains.map(d => `<span class="kn-tag custom">${escapeHtml(d)}<span class="remove-btn" onclick="doRemoveDomain('${escapeHtml(d)}')">×</span></span>`).join('')}
-        </div>
-        <div class="kn-add">
-          <input type="text" id="add-domain" placeholder="添加新赛道（如：留学规划）...">
-          <button onclick="doAddDomain()">添加赛道</button>
-        </div>
-      </div>
-      <div style="height:1px;background:#252336;margin:16px 0;"></div>
-      ${domains.map(domain => {
-        const kws = allKws[domain] || [];
-        return `
-          <div class="kn-section">
-            <div class="kn-title">
-              <span class="domain-name" ondblclick="doRenameDomain('${escapeHtml(domain)}')" title="双击重命名">${escapeHtml(domain)}</span>
-              <span class="kn-count">${kws.length} 个关键词</span>
-            </div>
-            <div class="kn-list">
-              ${kws.map(k => `<span class="kn-tag custom">${escapeHtml(k)}<span class="remove-btn" onclick="doRemoveKeyword('${escapeHtml(domain)}', '${escapeHtml(k)}')">×</span></span>`).join('')}
-            </div>
-            <div class="kn-add">
-              <input type="text" id="add-kw-${domain}" placeholder="添加关键词...">
-              <button onclick="doAddKeyword('${escapeHtml(domain)}')">添加</button>
-            </div>
-          </div>
-        `;
-      }).join('')}
-      <div style="font-size:11px;color:#888;margin-top:12px;padding:0 4px;">
-        💡 双击赛道名可以重命名。赛道用于分类热搜，关键词越精准匹配越准确。
-      </div>
-    `;
-  } else {
-    container.innerHTML = `
-      <div style="display:flex;gap:8px;margin-bottom:12px;">
-        <div class="tab-btn" onclick="switchKwTab('keywords')">🏷️ 关键词</div>
-        <div class="tab-btn active" onclick="switchKwTab('exclude')">🚫 排除词</div>
-      </div>
-      <div class="kn-section">
-        <div class="kn-title">
-          <span>排除词（过滤不想要的内容）</span>
-          <span class="kn-count">${excludes.length} 个</span>
-        </div>
-        <div class="kn-list">
-          ${excludes.map(k => `<span class="kn-tag custom">${escapeHtml(k)}<span class="remove-btn" onclick="doRemoveExclude('${escapeHtml(k)}')">×</span></span>`).join('')}
-        </div>
-        <div class="kn-add">
-          <input type="text" id="add-exclude" placeholder="添加排除词...">
-          <button onclick="doAddExclude()">添加</button>
-        </div>
-      </div>
-      <div style="font-size:11px;color:#888;margin-top:8px;padding:0 4px;">
-        💡 排除词用于过滤不相关的热搜。比如加"搞笑"，带搞笑的热搜就不会出现了。
-      </div>
-    `;
+  const kwData = loadKeywords();
+  const list = document.getElementById('pageContent');
+  let html = '<div class="kw-section">';
+  html += '<h3>赛道管理</h3>';
+  html += '<div class="domain-tabs" id="domainTabs2">';
+  for (const domain of Object.keys(kwData.keywords)) {
+    html += '<span class="domain-tab active" data-domain="' + domain + '">' + domain + '<span class="del" data-del-domain="' + domain + '">×</span></span>';
   }
-}
+  html += '</div>';
+  html += '<div class="kw-add"><input type="text" id="newDomainInput" placeholder="新赛道名称"><button id="addDomainBtn">添加赛道</button></div>';
 
-function switchKwTab(tab) {
-  kwCurrentTab = tab;
-  renderKeywords();
-}
-
-function doAddKeyword(domain) {
-  const input = document.getElementById(`add-kw-${domain}`);
-  const keyword = input.value.trim();
-  if (!keyword) return;
-  addKeyword(domain, keyword);
-  input.value = '';
-  showToast('已添加');
-  renderKeywords();
-  renderHotList();
-}
-
-function doRemoveKeyword(domain, keyword) {
-  if (!confirm(`删除关键词"${keyword}"？`)) return;
-  removeKeyword(domain, keyword);
-  showToast('已删除');
-  renderKeywords();
-  renderHotList();
-}
-
-function doAddExclude() {
-  const input = document.getElementById('add-exclude');
-  const keyword = input.value.trim();
-  if (!keyword) return;
-  addExcludeKeyword(keyword);
-  input.value = '';
-  showToast('已添加');
-  renderKeywords();
-  renderHotList();
-}
-
-function doRemoveExclude(keyword) {
-  if (!confirm(`删除排除词"${keyword}"？`)) return;
-  removeExcludeKeyword(keyword);
-  showToast('已删除');
-  renderKeywords();
-  renderHotList();
-}
-
-// ============ 赛道管理 ============
-function doAddDomain() {
-  const input = document.getElementById('add-domain');
-  const domain = input.value.trim();
-  if (!domain) return;
-  const kw = getAllKeywords();
-  if (kw[domain]) {
-    showToast('赛道已存在');
-    return;
+  html += '<div id="domainKeywordsSection">';
+  const firstDomain = Object.keys(kwData.keywords)[0] || '';
+  if (firstDomain) {
+    html += renderDomainKeywords(firstDomain, kwData);
   }
-  kw[domain] = [];
-  saveAllKeywords(kw);
-  input.value = '';
-  showToast('赛道已添加');
-  renderKeywords();
-  updateDomainTabs();
-}
+  html += '</div>';
 
-function doRemoveDomain(domain) {
-  if (!confirm(`确定删除赛道"${domain}"？\n该赛道下的所有关键词都会被删除。`)) return;
-  const kw = getAllKeywords();
-  delete kw[domain];
-  saveAllKeywords(kw);
-  showToast('赛道已删除');
-  renderKeywords();
-  updateDomainTabs();
-  // 如果当前选中的是被删除的赛道，切回全部
-  if (currentDomain === domain) {
-    currentDomain = 'all';
-    document.querySelectorAll('#domain-tabs .tab-chip').forEach(c => c.classList.toggle('active', c.dataset.domain === 'all'));
+  html += '<h3>排除词</h3>';
+  html += '<div class="kw-tags" id="excludeTags">';
+  for (const ex of kwData.exclude) {
+    html += '<span class="kw-tag">' + ex + '<span class="del" data-del-exclude="' + ex + '">×</span></span>';
   }
-  renderHotList();
+  html += '</div>';
+  html += '<div class="kw-add"><input type="text" id="newExcludeInput" placeholder="添加排除词"><button id="addExcludeBtn">添加</button></div>';
+  html += '</div>';
+  list.innerHTML = html;
+
+  document.getElementById('addDomainBtn').addEventListener('click', () => {
+    const input = document.getElementById('newDomainInput');
+    const val = input.value.trim();
+    if (val && !kwData.keywords[val]) {
+      kwData.keywords[val] = [];
+      saveKeywords(kwData);
+      renderKeywords();
+      renderDomainTabs();
+    }
+  });
+
+  list.querySelectorAll('[data-del-domain]').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const domain = el.dataset.delDomain;
+      delete kwData.keywords[domain];
+      saveKeywords(kwData);
+      renderKeywords();
+      renderDomainTabs();
+    });
+  });
+
+  list.querySelectorAll('.domain-tab').forEach(el => {
+    el.addEventListener('click', () => {
+      const domain = el.dataset.domain;
+      document.getElementById('domainKeywordsSection').innerHTML = renderDomainKeywords(domain, kwData);
+      bindKeywordEvents(kwData);
+    });
+  });
+
+  document.getElementById('addExcludeBtn').addEventListener('click', () => {
+    const input = document.getElementById('newExcludeInput');
+    const val = input.value.trim();
+    if (val && !kwData.exclude.includes(val)) {
+      kwData.exclude.push(val);
+      saveKeywords(kwData);
+      renderKeywords();
+    }
+  });
+
+  list.querySelectorAll('[data-del-exclude]').forEach(el => {
+    el.addEventListener('click', () => {
+      const ex = el.dataset.delExclude;
+      kwData.exclude = kwData.exclude.filter(x => x !== ex);
+      saveKeywords(kwData);
+      renderKeywords();
+    });
+  });
+
+  bindKeywordEvents(kwData);
 }
 
-function doRenameDomain(domain) {
-  const newName = prompt(`将"${domain}"重命名为：`, domain);
-  if (!newName || newName === domain) return;
-  const kw = getAllKeywords();
-  if (kw[newName]) {
-    showToast('赛道名已存在');
-    return;
+function renderDomainKeywords(domain, kwData) {
+  let html = '<h3>「' + domain + '」关键词</h3>';
+  html += '<div class="kw-tags">';
+  for (const kw of kwData.keywords[domain]) {
+    html += '<span class="kw-tag">' + kw + '<span class="del" data-del-kw="' + kw + '" data-domain="' + domain + '">×</span></span>';
   }
-  kw[newName] = kw[domain];
-  delete kw[domain];
-  saveAllKeywords(kw);
-  showToast('已重命名');
-  renderKeywords();
-  updateDomainTabs();
-  if (currentDomain === domain) currentDomain = newName;
-  renderHotList();
+  html += '</div>';
+  html += '<div class="kw-add"><input type="text" id="newKwInput" placeholder="添加关键词" data-domain="' + domain + '"><button id="addKwBtn" data-domain="' + domain + '">添加</button></div>';
+  return html;
 }
 
-// 更新顶部赛道Tab
-function updateDomainTabs() {
-  const allKws = getAllKeywords();
-  const domains = Object.keys(allKws);
-  const tabsContainer = document.getElementById('domain-tabs');
-  if (!tabsContainer) return;
-  tabsContainer.innerHTML = `
-    <div class="tab-chip ${currentDomain === 'all' ? 'active' : ''}" data-domain="all">全部</div>
-    ${domains.map(d => `<div class="tab-chip ${currentDomain === d ? 'active' : ''}" data-domain="${escapeHtml(d)}">${escapeHtml(d)}</div>`).join('')}
-  `;
-  // 重新绑定点击事件
-  tabsContainer.querySelectorAll('.tab-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      tabsContainer.querySelectorAll('.tab-chip').forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-      currentDomain = chip.dataset.domain;
-      currentTimestamp = null;
-      renderHotList();
+function bindKeywordEvents(kwData) {
+  const addBtn = document.getElementById('addKwBtn');
+  if (addBtn) {
+    addBtn.addEventListener('click', () => {
+      const input = document.getElementById('newKwInput');
+      const domain = addBtn.dataset.domain;
+      const val = input.value.trim();
+      if (val && !kwData.keywords[domain].includes(val)) {
+        kwData.keywords[domain].push(val);
+        saveKeywords(kwData);
+        renderKeywords();
+      }
+    });
+  }
+  document.querySelectorAll('[data-del-kw]').forEach(el => {
+    el.addEventListener('click', () => {
+      const domain = el.dataset.domain;
+      const kw = el.dataset.delKw;
+      kwData.keywords[domain] = kwData.keywords[domain].filter(x => x !== kw);
+      saveKeywords(kwData);
+      renderKeywords();
     });
   });
 }
 
-// ============ 页面切换 ============
-function switchPage(page) {
-  document.querySelectorAll('.nav-item').forEach(item => {
-    item.classList.toggle('active', item.dataset.page === page);
-  });
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById(`page-${page}`).classList.add('active');
-  
-  if (page === 'hotsearch') renderHotList();
-  if (page === 'history') renderHistory();
-  if (page === 'keywords') renderKeywords();
+function switchNav(nav) {
+  currentNav = nav;
+  document.querySelectorAll('.bottom-nav button').forEach(btn => btn.classList.remove('active'));
+  document.getElementById('nav' + nav.charAt(0).toUpperCase() + nav.slice(1)).classList.add('active');
+
+  const tabs = document.getElementById('domainTabs');
+  const filters = document.querySelector('.filters');
+
+  if (nav === 'hot') {
+    tabs.style.display = 'flex';
+    filters.style.display = 'flex';
+    renderList();
+  } else if (nav === 'history') {
+    tabs.style.display = 'none';
+    filters.style.display = 'none';
+    renderHistory();
+  } else if (nav === 'keywords') {
+    tabs.style.display = 'none';
+    filters.style.display = 'none';
+    renderKeywords();
+  }
 }
 
-// 底部导航
-document.querySelectorAll('.nav-item').forEach(item => {
-  item.addEventListener('click', () => switchPage(item.dataset.page));
-});
-
-// 赛道Tab点击
-document.querySelectorAll('#domain-tabs .tab-chip').forEach(chip => {
-  chip.addEventListener('click', () => {
-    document.querySelectorAll('#domain-tabs .tab-chip').forEach(c => c.classList.remove('active'));
-    chip.classList.add('active');
-    currentDomain = chip.dataset.domain;
-    currentTimestamp = null;
-    renderHotList();
-  });
-});
-
-// ============ 额外样式（关键词tab切换按钮） ============
-const extraStyle = document.createElement('style');
-extraStyle.textContent = `
-.tab-btn {
-  flex: 1;
-  padding: 10px;
-  text-align: center;
-  background: #1A1925;
-  border-radius: 10px;
-  font-size: 13px;
-  color: #888;
-  cursor: pointer;
-  border: 1px solid #252336;
+async function doRefresh() {
+  const btn = document.getElementById('refreshBtn');
+  btn.style.animation = 'spin 0.8s linear infinite';
+  const list = document.getElementById('hotList');
+  if (currentNav === 'hot') {
+    list.innerHTML = '<div class="loading"><div class="spinner"></div>正在抓取5个平台热搜数据，约10秒...</div>';
+  }
+  try {
+    const result = await fetchAllHotSearch();
+    document.getElementById('lastUpdate').textContent =
+      '更新于 ' + new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) +
+      ' | 共' + result.total + '条，相关' + result.relevant + '条';
+    if (currentNav === 'hot') renderList();
+  } catch(e) {
+    if (currentNav === 'hot') {
+      list.innerHTML = '<div class="empty">抓取失败，请稍后重试。错误：' + e.message + '</div>';
+    }
+  } finally {
+    btn.style.animation = '';
+  }
 }
-.tab-btn.active {
-  background: rgba(108, 92, 231, 0.2);
-  color: #A29BFE;
-  border-color: #6C5CE7;
-}
-`;
-document.head.appendChild(extraStyle);
 
-// ============ 初始化 ============
+// ===== Init =====
+allItems = loadData();
 renderPlatformFilter();
-initSortAndDateFilter();
-// 先显示本地数据，再异步加载服务端
-renderHotList();
-loadFromServer().then(ok => {
-  if (ok) renderHotList();
-});
+renderDomainTabs();
+
+document.getElementById('refreshBtn').addEventListener('click', doRefresh);
+document.getElementById('platformFilter').addEventListener('change', (e) => { currentPlatform = e.target.value; renderList(); });
+document.getElementById('sortFilter').addEventListener('change', (e) => { currentSort = e.target.value; renderList(); });
+document.getElementById('timeFilter').addEventListener('change', (e) => { currentTime = parseInt(e.target.value); renderList(); });
+
+document.getElementById('navHot').addEventListener('click', () => switchNav('hot'));
+document.getElementById('navHistory').addEventListener('click', () => switchNav('history'));
+document.getElementById('navKeywords').addEventListener('click', () => switchNav('keywords'));
+
+if (allItems.length > 0) {
+  document.getElementById('lastUpdate').textContent = '本地缓存 ' + allItems.length + ' 条';
+  renderList();
+} else {
+  doRefresh();
+}
 </script>
 </body>
 </html>
